@@ -48,6 +48,10 @@ impl GameContext {
         let sdl = sdl2::init().unwrap();
         let video_subsystem = sdl.video().unwrap();
 
+        // Hide mouse cursor
+        sdl.mouse().show_cursor(false);
+        sdl.mouse().set_relative_mouse_mode(true);
+
         // Get primary display bounds
         let current_display = video_subsystem.display_bounds(0)?;
         let display_width = current_display.width();
@@ -72,7 +76,7 @@ impl GameContext {
             let viewport_width = (buffer_width * modifier) as i32;
             let viewport_height = display_height as i32;
             gl::Viewport(
-                ((display_width as i32 - viewport_width) / 2),
+                (display_width as i32 - viewport_width) / 2,
                 0,
                 viewport_width,
                 viewport_height
@@ -98,7 +102,12 @@ impl GameContext {
 
         let mut renderer = Renderer::new(FrameBuffer::new(buffer_width, buffer_height), palette)?;
 
-        let mut input = Input::new();
+        let mut input = Input::new(
+            buffer_width as i32,
+            buffer_height as i32,
+            display_width as i32,
+            display_height as i32
+        );
 
         let mut event_pump = sdl.event_pump().unwrap();
 

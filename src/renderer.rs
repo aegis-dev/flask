@@ -220,8 +220,6 @@ impl Renderer {
     pub fn line(&mut self, x1: i64, y1: i64, x2: i64, y2: i64, color_idx: u8) {
         let mut x = 0;
         let mut y = 0;
-        let mut xe = 0;
-        let mut ye = 0;
         let dx = x2 - x1;
         let dy = y2 - y1;
         let dx1 = dx.abs();
@@ -229,6 +227,7 @@ impl Renderer {
         let mut px = 2 * dy1 - dx1;
         let mut py = 2 * dx1 - dy1;
         if dy1 <= dx1 {
+            let mut xe = 0;
             if dx >= 0 {
                 x = x1;
                 y = y1;
@@ -255,6 +254,7 @@ impl Renderer {
                 self.point(x, y, color_idx);
             }
         } else {
+            let mut ye = 0;
             if dy >= 0 {
                 x = x1;
                 y = y1;

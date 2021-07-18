@@ -27,8 +27,14 @@ use num_traits::FromPrimitive;
 use sdl2::mouse::MouseButton;
 
 pub struct Input {
-    cursor_x: i32,
-    cursor_y: i32,
+    cursor_x: f32,
+    cursor_y: f32,
+    max_cursor_x: f32,
+    max_cursor_y: f32,
+    min_cursor_x: f32,
+    min_cursor_y: f32,
+    cursor_x_sensitivity: f32,
+    cursor_y_sensitivity: f32,
     key_state: HashMap<Key, State>,
     mouse_button_state: HashMap<Button, State>,
 }
@@ -293,10 +299,16 @@ pub enum Key {
 }
 
 impl Input {
-    pub fn new() -> Input {
+    pub fn new(screen_buffer_width: i32, screen_buffer_height: i32, screen_width: i32, screen_height: i32) -> Input {
         Input {
-            cursor_x: 0,
-            cursor_y: 0,
+            cursor_x: 0.0,
+            cursor_y: 0.0,
+            max_cursor_x: (screen_buffer_width / 2) as f32,
+            max_cursor_y: (screen_buffer_height / 2) as f32,
+            min_cursor_x: (-screen_buffer_width / 2) as f32,
+            min_cursor_y: (-screen_buffer_height / 2) as f32,
+            cursor_x_sensitivity: screen_buffer_width as f32 / screen_width as f32,
+            cursor_y_sensitivity: screen_buffer_height as f32 / screen_height as f32,
             key_state: HashMap::new(),
             mouse_button_state: HashMap::new()
         }
@@ -334,8 +346,21 @@ impl Input {
                 xrel,
                 yrel,
             } => {
-                self.cursor_x = *x;
-                self.cursor_y = *y;
+                let adjusted_x_rel = *xrel as f32 * self.cursor_x_sensitivity;
+                let adjusted_y_rel = *yrel as f32 * self.cursor_y_sensitivity;
+
+                self.cursor_x += adjusted_x_rel;
+                if self.cursor_x > self.max_cursor_x {
+                    self.cursor_x = self.max_cursor_x;
+                } else if self.cursor_x < self.min_cursor_x {
+                    self.cursor_x = self.min_cursor_x ;
+                }
+                self.cursor_y -= adjusted_y_rel; // subtract to invert y value
+                if self.cursor_y > self.max_cursor_y {
+                    self.cursor_y = self.max_cursor_y;
+                } else if self.cursor_y < self.min_cursor_y {
+                    self.cursor_y = self.min_cursor_y;
+                }
             }
             Event::MouseButtonDown {
                 timestamp,
@@ -371,5 +396,9 @@ impl Input {
             None => State::Up,
             Some(state) => *state
         }
+    }
+
+    pub fn get_cursor_position(&self) -> (i32, i32)  {
+        (self.cursor_x as i32, self.cursor_y as i32)
     }
 }
