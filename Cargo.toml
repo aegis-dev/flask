@@ -1,0 +1,16 @@
+[package]
+name = "flask"
+version = "0.1.0"
+authors = ["Egidijus Lileika <lileikaa@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+gl = "0.14.0"
+num-traits = "0.2.14"
+num-derive = "0.3.3"
+png = "0.16.8"
+
+[dependencies.sdl2]
+version = "0.34.4"
+features = ["bundled", "static-link"]
