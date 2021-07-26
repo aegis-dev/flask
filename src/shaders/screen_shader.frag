@@ -29,15 +29,19 @@ uniform int background_color_index;
 layout (binding = 0) uniform sampler2D texture_sampler;
 layout (binding = 1) uniform sampler2D palette_sampler;
 
+const int MAX_COLORS = 256;
+
 void main(void) {
     float color_offset = 1.0 / palette_size;
 
     float color_idx = texture2D(texture_sampler, frag_texture_coords).x;
     if (color_idx == 0.0) {
-        color_idx = color_offset * background_color_index;
+        color_idx = background_color_index;
     } else {
-        color_idx = palette_size * color_idx;
+        color_idx = color_idx * MAX_COLORS;
     }
 
-    color = texture(palette_sampler, vec2(color_idx - color_offset, 0.0));
+    float palette_color = (color_idx - 1) * color_offset;
+
+    color = texture(palette_sampler, vec2(palette_color, 0.0));
 }

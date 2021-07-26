@@ -19,7 +19,6 @@
 
 use crate::mesh::Mesh;
 use crate::texture::{Texture, ImageMode};
-use crate::color::Color;
 
 pub struct FrameBuffer {
     buffer_width: u32,

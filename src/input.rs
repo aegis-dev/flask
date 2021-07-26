@@ -314,6 +314,7 @@ impl Input {
         }
     }
 
+    #[allow(unused_variables)]
     pub fn process_sdl_event(&mut self, event:& Event) -> Result<(), String> {
         match event {
             Event::KeyDown {

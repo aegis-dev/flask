@@ -43,9 +43,6 @@ impl Renderer {
             return Err(String::from("Palette must be 4 color aligned"));
         }
 
-        let camera_origin_x = frame_buffer.get_width() as i64 / 2;
-        let camera_origin_y = frame_buffer.get_height() as i64 / 2;
-
         let mut palette_texture_data: Vec<u8> = vec![0; 0];
         palette_texture_data.reserve_exact((palette.len() * 3) as usize);
         for color in &palette {
@@ -55,6 +52,9 @@ impl Renderer {
         }
 
         let palette_texture = Texture::from_data(&palette_texture_data, palette.len() as u32, 1, ImageMode::RGB);
+
+        let camera_origin_x = frame_buffer.get_width() as i64 / 2;
+        let camera_origin_y = frame_buffer.get_height() as i64 / 2;
 
         Ok(Renderer {
             frame_buffer,
@@ -218,8 +218,6 @@ impl Renderer {
     }
 
     pub fn line(&mut self, x1: i64, y1: i64, x2: i64, y2: i64, color_idx: u8) {
-        let mut x = 0;
-        let mut y = 0;
         let dx = x2 - x1;
         let dy = y2 - y1;
         let dx1 = dx.abs();
@@ -227,7 +225,9 @@ impl Renderer {
         let mut px = 2 * dy1 - dx1;
         let mut py = 2 * dx1 - dy1;
         if dy1 <= dx1 {
-            let mut xe = 0;
+            let mut x;
+            let mut y;
+            let xe;
             if dx >= 0 {
                 x = x1;
                 y = y1;
@@ -254,7 +254,9 @@ impl Renderer {
                 self.point(x, y, color_idx);
             }
         } else {
-            let mut ye = 0;
+            let mut x;
+            let mut y;
+            let ye;
             if dy >= 0 {
                 x = x1;
                 y = y1;

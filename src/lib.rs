@@ -17,6 +17,8 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
+#![allow(dead_code)]
+
 extern crate gl;
 extern crate sdl2;
 
