@@ -17,8 +17,9 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use gl;
 use std::ffi::c_void;
+
+use gl;
 
 pub struct Texture {
     texture_id: gl::types::GLuint,

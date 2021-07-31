@@ -17,10 +17,11 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use gl;
 use std::mem;
 use std::ffi::c_void;
 use std::ptr::null;
+
+use gl;
 
 pub struct Mesh {
     vao_id: gl::types::GLuint,

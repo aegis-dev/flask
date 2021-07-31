@@ -17,8 +17,9 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use std::io::{Read, Error};
 use png::{ColorType, Transformations};
+
+use crate::byte_buffer_reader::ByteBufferReader;
 
 pub struct Sprite {
     width: u32,
@@ -27,7 +28,7 @@ pub struct Sprite {
 }
 
 impl Sprite {
-    pub fn from_indexed_8bit_png(png_bytes: &[u8] ) -> Result<Sprite, String> {
+    pub fn from_indexed_8bit_png(png_bytes: &[u8]) -> Result<Sprite, String> {
         let mut decoder = png::Decoder::new(ByteBufferReader::from(png_bytes));
         decoder.set_transformations(Transformations::IDENTITY);
         let mut reader = match decoder.read_info() {
@@ -87,43 +88,5 @@ impl Sprite {
             return 0;
         }
         *self.pixels.get(x as usize).unwrap().get(y as usize).unwrap()
-    }
-}
-
-struct ByteBufferReader {
-    index: usize,
-    buffer: Vec<u8>
-}
-
-impl ByteBufferReader {
-    pub fn from(buffer: &[u8]) -> ByteBufferReader {
-        ByteBufferReader { index: 0, buffer: Vec::from(buffer) }
-    }
-
-    pub fn read_byte(&mut self) -> Option<u8> {
-        match self.buffer.get(self.index) {
-            Some(byte) => {
-                self.index += 1;
-                Some(*byte)
-            }
-            None => None
-        }
-    }
-}
-
-impl Read for ByteBufferReader {
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
-        let mut byte_idx = 0;
-        for _i in 0..buf.len() {
-            match self.read_byte() {
-                None => break,
-                Some(byte) => {
-                    buf[byte_idx] = byte;
-                    byte_idx += 1;
-                }
-            }
-        }
-
-        Ok(byte_idx)
     }
 }

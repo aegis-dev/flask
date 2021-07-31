@@ -17,12 +17,13 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
+use std::ptr::null;
+
 use gl;
 
 use crate::shaders::ShaderProgram;
 use crate::mesh::Mesh;
 use crate::texture::Texture;
-use std::ptr::null;
 
 pub struct GlRenderer {
     shader: ShaderProgram,

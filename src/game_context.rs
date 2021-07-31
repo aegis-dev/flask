@@ -137,7 +137,7 @@ impl GameContext {
                 last_frame_time = time_now;
 
                 // Update scene
-                match current_scene.on_update(&mut renderer, &input, (delta_time / 1000) as f64) {
+                match current_scene.on_update(&mut renderer, &input, delta_time as f64 / 1000.0) {
                     Some(scene) => {
                         current_scene.on_destroy();
                         current_scene = scene;
@@ -152,21 +152,24 @@ impl GameContext {
                 // Update render texture
                 renderer.swap()?;
                 //println!("update: {0}, + swap: {1}", update_time - time_now, GameContext::time_now() - time_now);
+
+                gl_renderer.clear_buffer();
+
+                gl_renderer.begin_rendering();
+
+                gl_renderer.set_uniform_int("background_color_index", renderer.get_background_color() as i32);
+
+                let palette_texture = renderer.get_palette_texture();
+
+                gl_renderer.set_uniform_int("palette_size", palette_texture.width() as i32);
+
+                let frame_buffer = renderer.get_frame_buffer();
+                gl_renderer.render(frame_buffer.get_quad(), frame_buffer.get_texture(), palette_texture);
+
+                gl_renderer.end_rendering();
+
+                window.gl_swap_window();
             }
-
-            // TODO limit frames per second by monitor refresh rate?
-            gl_renderer.clear_buffer();
-
-            gl_renderer.begin_rendering();
-
-            gl_renderer.set_uniform_int("background_color_index", renderer.get_background_color() as i32);
-
-            let frame_buffer = renderer.get_frame_buffer();
-            gl_renderer.render(frame_buffer.get_quad(), frame_buffer.get_texture(), renderer.get_palette_texture());
-
-            gl_renderer.end_rendering();
-
-            window.gl_swap_window();
         }
 
         Ok(())

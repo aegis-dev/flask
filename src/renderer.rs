@@ -26,7 +26,6 @@ use crate::texture::{Texture, ImageMode};
 pub struct Renderer {
     frame_buffer: FrameBuffer,
     palette_texture: Texture,
-    palette_color_count: u8,
     camera_x: i64,
     camera_y: i64,
     camera_origin_x: i64,
@@ -36,22 +35,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(frame_buffer: FrameBuffer, palette: Vec<Color>) -> Result<Renderer, String> {
-        if palette.len() == 0 {
-            return Err(String::from("Palette doesn't contain any colors"));
-        }
-        if palette.len() % 4 != 0 {
-            return Err(String::from("Palette must be 4 color aligned"));
-        }
-
-        let mut palette_texture_data: Vec<u8> = vec![0; 0];
-        palette_texture_data.reserve_exact((palette.len() * 3) as usize);
-        for color in &palette {
-            palette_texture_data.push(color.r);
-            palette_texture_data.push(color.g);
-            palette_texture_data.push(color.b);
-        }
-
-        let palette_texture = Texture::from_data(&palette_texture_data, palette.len() as u32, 1, ImageMode::RGB);
+        let palette_texture = Renderer::palette_texture_from_color_vec(&palette)?;
 
         let camera_origin_x = frame_buffer.get_width() as i64 / 2;
         let camera_origin_y = frame_buffer.get_height() as i64 / 2;
@@ -59,13 +43,34 @@ impl Renderer {
         Ok(Renderer {
             frame_buffer,
             palette_texture,
-            palette_color_count: palette.len() as u8,
             camera_x: 0,
             camera_y: 0,
             camera_origin_x,
             camera_origin_y,
             background_color_index: 1
         })
+    }
+
+    fn palette_texture_from_color_vec(palette: &Vec<Color>) -> Result<Texture, String> {
+        if palette.len() == 0 {
+            return Err(String::from("Palette doesn't contain any colors"));
+        }
+        if palette.len() % 4 != 0 {
+            return Err(String::from("Palette must be 4 color aligned"));
+        }
+        if palette.len() > 255 {
+            return Err(String::from("Palette can only be up to 255 colors (0 is reserved for background color)"));
+        }
+
+        let mut palette_texture_data: Vec<u8> = vec![0; 0];
+        palette_texture_data.reserve_exact((palette.len() * 3) as usize);
+        for color in palette {
+            palette_texture_data.push(color.r);
+            palette_texture_data.push(color.g);
+            palette_texture_data.push(color.b);
+        }
+
+        Ok(Texture::from_data(&palette_texture_data, palette.len() as u32, 1, ImageMode::RGB))
     }
 
     pub fn swap(&mut self) -> Result<(), String> {
@@ -102,7 +107,7 @@ impl Renderer {
         match background_color_index {
             0 => Err(String::from("Background color index can't be 0")),
             index => {
-                if index > self.palette_color_count {
+                if index > self.palette_texture.width() as u8 {
                     return Err(String::from(format!("Background color index {} out of bounds", index)));
                 }
                 self.background_color_index = index;
@@ -115,8 +120,13 @@ impl Renderer {
         self.background_color_index as u8
     }
 
+    pub fn set_palette(&mut self, palette: &Vec<Color>) -> Result<(), String> {
+        self.palette_texture = Renderer::palette_texture_from_color_vec(palette)?;
+        Ok(())
+    }
+
     pub fn get_palette_color_count(&self) -> u8 {
-        self.palette_color_count as u8
+        self.palette_texture.width() as u8
     }
 
     pub fn point(&mut self, x: i64, y: i64, color_idx: u8) {

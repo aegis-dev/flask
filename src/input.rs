@@ -21,10 +21,10 @@ use std::collections::HashMap;
 
 use sdl2::keyboard::Keycode;
 use sdl2::event::Event;
+use sdl2::mouse::MouseButton;
 
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
-use sdl2::mouse::MouseButton;
 
 pub struct Input {
     cursor_x: f32,
