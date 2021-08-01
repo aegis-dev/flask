@@ -58,9 +58,14 @@ impl ShaderProgram {
         }
     }
 
-    pub fn set_uniform_int(&self, name: &str, value: i32) {
+    pub fn get_uniform_location(&self, name: &str) -> i32 {
         unsafe {
-            let location = gl::GetUniformLocation(self.id, name.as_ptr() as *const gl::types::GLchar);
+            gl::GetUniformLocation(self.id, name.as_ptr() as *const gl::types::GLchar)
+        }
+    }
+
+    pub fn set_uniform_int(&self, location: i32, value: i32) {
+        unsafe {
             gl::Uniform1i(location, value);
         }
     }
@@ -102,6 +107,36 @@ impl ShaderProgram {
 
             return Err(error.to_string_lossy().into_owned());
         }
+
+        unsafe {
+            gl::ValidateProgram(program_id);
+        }
+
+        success = 1;
+        unsafe {
+            gl::GetProgramiv(program_id, gl::VALIDATE_STATUS, &mut success);
+        }
+
+        if success == 0 {
+            let mut len: gl::types::GLint = 0;
+            unsafe {
+                gl::GetProgramiv(program_id, gl::INFO_LOG_LENGTH, &mut len);
+            }
+
+            let error = allocate_buffer_for_gl_message(len as usize);
+
+            unsafe {
+                gl::GetProgramInfoLog(
+                    program_id,
+                    len,
+                    std::ptr::null_mut(),
+                    error.as_ptr() as *mut gl::types::GLchar,
+                );
+            }
+
+            return Err(error.to_string_lossy().into_owned());
+        }
+
 
         for shader in shaders {
             unsafe {

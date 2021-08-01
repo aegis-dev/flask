@@ -26,6 +26,7 @@ use crate::color::Color;
 use crate::input::Input;
 use crate::renderer::Renderer;
 use crate::frame_buffer::FrameBuffer;
+use crate::game_status::GameStatus;
 
 pub struct GameContext;
 
@@ -36,7 +37,8 @@ impl GameContext {
         GameContext { }
     }
 
-    pub fn run(&self, buffer_width: u32, buffer_height: u32, game_name: &str, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<(), String> {
+    // This func is mutable to ensure that this object is not used more than once when game is running
+    pub fn run(&mut self, buffer_width: u32, buffer_height: u32, game_name: &str, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<(), String> {
         if buffer_width % 4 != 0 {
             return Err(String::from("\'buffer_width\' must be 4 byte aligned"));
         }
@@ -60,7 +62,6 @@ impl GameContext {
         let window = video_subsystem
             .window(game_name, display_width, display_height)
             .opengl()
-            //.fullscreen()
             .borderless()
             .build()
             .unwrap();
@@ -92,13 +93,11 @@ impl GameContext {
             )
         };
 
+        let UNIFORM_PALETTE_SIZE_LOCATION = 2;
+        let UNIFORM_BACKGROUND_COLOR_INDEX_LOCATION = 3;
+
         let gl_renderer = GlRenderer::new(shader);
         gl_renderer.set_clear_color(0.0, 0.0, 0.0, 0.0);
-
-        // Initialize palette size uniform value
-        gl_renderer.begin_rendering();
-        gl_renderer.set_uniform_int("palette_size", palette.len() as i32);
-        gl_renderer.end_rendering();
 
         let mut renderer = Renderer::new(FrameBuffer::new(buffer_width, buffer_height), palette)?;
 
@@ -113,11 +112,12 @@ impl GameContext {
 
         let mut current_scene = starting_scene;
 
-        current_scene.on_start();
+        current_scene.on_start(&mut renderer);
 
         let delta_time = GameContext::time_now();
         let mut last_frame_time = delta_time;
 
+        let mut game_status = GameStatus::new();
         'main_loop: loop {
             for event in event_pump.poll_iter() {
                 match event {
@@ -137,13 +137,17 @@ impl GameContext {
                 last_frame_time = time_now;
 
                 // Update scene
-                match current_scene.on_update(&mut renderer, &input, delta_time as f64 / 1000.0) {
+                match current_scene.on_update(&mut game_status, &mut renderer, &input, delta_time as f64 / 1000.0) {
                     Some(scene) => {
                         current_scene.on_destroy();
                         current_scene = scene;
-                        current_scene.on_start();
+                        current_scene.on_start(&mut renderer);
                     }
-                    _ => { }
+                    _ => {
+                        if game_status.should_quit() {
+                            break 'main_loop
+                        }
+                    }
                 };
 
                 // TODO: add proper debug mode
@@ -155,13 +159,12 @@ impl GameContext {
 
                 gl_renderer.clear_buffer();
 
-                gl_renderer.begin_rendering();
-
-                gl_renderer.set_uniform_int("background_color_index", renderer.get_background_color() as i32);
-
                 let palette_texture = renderer.get_palette_texture();
 
-                gl_renderer.set_uniform_int("palette_size", palette_texture.width() as i32);
+                gl_renderer.begin_rendering();
+
+                gl_renderer.set_uniform_int(UNIFORM_PALETTE_SIZE_LOCATION, palette_texture.width() as i32);
+                gl_renderer.set_uniform_int(UNIFORM_BACKGROUND_COLOR_INDEX_LOCATION, renderer.get_background_color() as i32);
 
                 let frame_buffer = renderer.get_frame_buffer();
                 gl_renderer.render(frame_buffer.get_quad(), frame_buffer.get_texture(), palette_texture);

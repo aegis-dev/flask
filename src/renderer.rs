@@ -87,6 +87,14 @@ impl Renderer {
         &self.palette_texture
     }
 
+    pub fn get_buffer_width(&self) -> u32 {
+        self.frame_buffer.get_width()
+    }
+
+    pub fn get_buffer_height(&self) -> u32 {
+        self.frame_buffer.get_height()
+    }
+
     pub fn get_camera_x(&mut self) -> i64 {
         self.camera_x
     }

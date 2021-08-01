@@ -76,7 +76,6 @@ pub fn from_png(png_file_path: &str) -> Result<Vec<Color>, String> {
 
 pub fn from_png_bytes(png_bytes: &[u8]) -> Result<Vec<Color>, String> {
     let mut decoder = png::Decoder::new(ByteBufferReader::from(png_bytes));
-    decoder.set_transformations(Transformations::IDENTITY);
     let mut reader = match decoder.read_info() {
         Ok(reader) => reader.1,
         Err(error) => return Err(error.to_string())
@@ -90,18 +89,11 @@ pub fn from_png_bytes(png_bytes: &[u8]) -> Result<Vec<Color>, String> {
 
     let info = reader.info();
 
-    let color_size = match info.color_type {
-        ColorType::RGB => { 3 }
-        ColorType::RGBA => { 4 }
-        _ => {
-            return Err(String::from("Only RGB and RGBA PNG format is supported"))
-        }
-    };
-
     let width = info.width as usize;
     let height = info.height as usize;
+    let color_size = image_data.len() / (width * height);
 
-    if width * height * color_size != image_data.len() {
+    if color_size != 3 && color_size != 4 {
         return Err(
             String::from(format!("Unexpected image size or it is corrupted.\nwidth: {0} \
             , height: {1}, byte_count: {2}", width, height, image_data.len()))

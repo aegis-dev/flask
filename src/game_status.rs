@@ -17,14 +17,20 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-#version 430 core
+pub struct GameStatus {
+    should_quit: bool,
+}
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texture_coords;
+impl GameStatus {
+    pub fn new() -> GameStatus {
+        GameStatus { should_quit: false }
+    }
 
-out vec2 frag_texture_coords;
+    pub fn quit(&mut self) {
+        self.should_quit = true;
+    }
 
-void main(void) {
-    gl_Position = vec4(position, 1.0);
-    frag_texture_coords = texture_coords;
+    pub fn should_quit(&self) -> bool {
+        self.should_quit
+    }
 }
