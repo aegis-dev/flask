@@ -93,8 +93,8 @@ impl GameContext {
             )
         };
 
-        let UNIFORM_PALETTE_SIZE_LOCATION = 2;
-        let UNIFORM_BACKGROUND_COLOR_INDEX_LOCATION = 3;
+        let uniform_palette_size_location = 2;
+        let uniform_background_color_index_location = 3;
 
         let gl_renderer = GlRenderer::new(shader);
         gl_renderer.set_clear_color(0.0, 0.0, 0.0, 0.0);
@@ -162,8 +162,8 @@ impl GameContext {
                 gl_renderer.begin_rendering();
 
                 let palette_texture = renderer.get_palette_texture();
-                gl_renderer.set_uniform_int(UNIFORM_PALETTE_SIZE_LOCATION, palette_texture.width() as i32);
-                gl_renderer.set_uniform_int(UNIFORM_BACKGROUND_COLOR_INDEX_LOCATION, renderer.get_background_color() as i32);
+                gl_renderer.set_uniform_int(uniform_palette_size_location, palette_texture.width() as i32);
+                gl_renderer.set_uniform_int(uniform_background_color_index_location, renderer.get_background_color() as i32);
 
                 let frame_buffer = renderer.get_frame_buffer();
                 gl_renderer.render(frame_buffer.get_quad(), frame_buffer.get_texture(), palette_texture);

@@ -20,7 +20,6 @@
 use std::fs::File;
 use std::io::Read;
 
-use png::{ColorType, Transformations};
 use num_derive::FromPrimitive;
 
 use crate::color::Color;
@@ -75,7 +74,7 @@ pub fn from_png(png_file_path: &str) -> Result<Vec<Color>, String> {
 }
 
 pub fn from_png_bytes(png_bytes: &[u8]) -> Result<Vec<Color>, String> {
-    let mut decoder = png::Decoder::new(ByteBufferReader::from(png_bytes));
+    let decoder = png::Decoder::new(ByteBufferReader::from(png_bytes));
     let mut reader = match decoder.read_info() {
         Ok(reader) => reader.1,
         Err(error) => return Err(error.to_string())
