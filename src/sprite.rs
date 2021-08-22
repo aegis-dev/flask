@@ -20,6 +20,7 @@
 use png::{ColorType, Transformations};
 
 use crate::byte_buffer_reader::ByteBufferReader;
+use std::collections::HashMap;
 
 pub struct Sprite {
     width: u32,
@@ -88,5 +89,36 @@ impl Sprite {
             return 0;
         }
         *self.pixels.get(x as usize).unwrap().get(y as usize).unwrap()
+    }
+}
+
+#[derive(Clone, Copy, Eq, Hash)]
+pub struct SpriteID(u32);
+
+impl PartialEq for SpriteID {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+pub struct SpriteBank {
+    counter: u32,
+    sprites_map: HashMap<SpriteID, Sprite>,
+}
+
+impl SpriteBank {
+    pub fn new() -> SpriteBank {
+        SpriteBank { counter: 0, sprites_map: HashMap::new() }
+    }
+
+    pub fn add_sprite(&mut self, sprite: Sprite) -> SpriteID {
+        let id = SpriteID(self.counter);
+        self.sprites_map.insert(id, sprite);
+        self.counter += 1;
+        id
+    }
+
+    pub fn get_sprite(&self, sprite_id: &SpriteID) -> Option<&Sprite> {
+        self.sprites_map.get(sprite_id)
     }
 }

@@ -159,10 +159,9 @@ impl GameContext {
 
                 gl_renderer.clear_buffer();
 
-                let palette_texture = renderer.get_palette_texture();
-
                 gl_renderer.begin_rendering();
 
+                let palette_texture = renderer.get_palette_texture();
                 gl_renderer.set_uniform_int(UNIFORM_PALETTE_SIZE_LOCATION, palette_texture.width() as i32);
                 gl_renderer.set_uniform_int(UNIFORM_BACKGROUND_COLOR_INDEX_LOCATION, renderer.get_background_color() as i32);
 
