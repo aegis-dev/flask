@@ -47,7 +47,7 @@ impl Renderer {
             camera_y: 0,
             camera_origin_x,
             camera_origin_y,
-            background_color_index: 1
+            background_color_index: 1,
         })
     }
 
@@ -95,11 +95,11 @@ impl Renderer {
         self.frame_buffer.get_height()
     }
 
-    pub fn get_camera_x(&mut self) -> i64 {
+    pub fn get_camera_x(&self) -> i64 {
         self.camera_x
     }
 
-    pub fn get_camera_y(&mut self) -> i64 {
+    pub fn get_camera_y(&self) -> i64 {
         self.camera_y
     }
 

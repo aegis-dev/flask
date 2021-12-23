@@ -58,12 +58,6 @@ impl ShaderProgram {
         }
     }
 
-    pub fn get_uniform_location(&self, name: &str) -> i32 {
-        unsafe {
-            gl::GetUniformLocation(self.id, name.as_ptr() as *const gl::types::GLchar)
-        }
-    }
-
     pub fn set_uniform_int(&self, location: i32, value: i32) {
         unsafe {
             gl::Uniform1i(location, value);

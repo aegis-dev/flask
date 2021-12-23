@@ -60,10 +60,6 @@ impl GlRenderer {
         }
     }
 
-    pub fn get_uniform_location(&self, name: &str) -> i32 {
-        self.shader.get_uniform_location(name)
-    }
-
     pub fn set_uniform_int(&self, location: i32, value: i32) {
         self.shader.set_uniform_int(location, value);
     }

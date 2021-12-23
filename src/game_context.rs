@@ -141,6 +141,12 @@ impl GameContext {
                     Some(scene) => {
                         current_scene.on_destroy();
                         current_scene = scene;
+
+                        // Reset renderer
+                        renderer.set_camera_x(0);
+                        renderer.set_camera_y(0);
+                        renderer.set_background_color(1).unwrap();
+
                         current_scene.on_start(&mut renderer);
                     }
                     _ => {
