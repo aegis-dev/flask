@@ -93,7 +93,7 @@ impl Sprite {
 }
 
 #[derive(Clone, Copy, Eq, Hash)]
-pub struct SpriteID(u32);
+pub struct SpriteID(pub u32);
 
 impl PartialEq for SpriteID {
     fn eq(&self, other: &Self) -> bool {

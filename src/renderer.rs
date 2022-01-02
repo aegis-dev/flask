@@ -168,7 +168,7 @@ impl Renderer {
     pub fn circle_filled(&mut self, origin_x: i64, origin_y: i64, radius: u32, color_idx: u8) {
         let mut x: i64 = 0;
         let mut y: i64 = radius as i64;
-        let mut p: i64 = ((5 - radius * 4) / 4) as i64;
+        let mut p: i64 = ((5 - radius as i64 * 4) / 4) as i64;
 
         self.circle_points_fill(origin_x, origin_y, x, y, color_idx);
         while x < y {
@@ -209,29 +209,34 @@ impl Renderer {
 
     fn circle_points_fill(&mut self, cx: i64, cy: i64, x: i64, y: i64, color_idx: u8) {
         if x == 0 {
-            for i in cy - y..=cy + y {
-                self.point(cx, i, color_idx);
-            }
-            for i in cx - y..=cx + y {
-                self.point(i, cy, color_idx);
-            }
+            // self.point(cx, cy + y, color_idx);
+            // self.point(cx, cy - y, color_idx);
+            // self.point(cx + y, cy, color_idx);
+            // self.point(cx - y, cy, color_idx);
+            self.line(cx, cy + y, cx, cy - y, color_idx);
+            self.line(cx + y, cy, cx - y, cy, color_idx);
         } else if x == y {
-            for a in cx - x..=cx + x {
-                for b in cy - y..=cy + y {
-                    self.point(a, b, color_idx);
-                }
-            }
+            // self.point(cx + x, cy + y, color_idx);
+            // self.point(cx - x, cy + y, color_idx);
+            // self.point(cx + x, cy - y, color_idx);
+            // self.point(cx - x, cy - y, color_idx);
+            self.line(cx + x, cy + y, cx - x, cy + y, color_idx);
+            self.line(cx + x, cy - y, cx - x, cy - y, color_idx);
         } else if x < y {
-            for a in cx - x..=cx + x {
-                for b in cy - y..=cy + y {
-                    self.point(a, b, color_idx);
-                }
-            }
-            for a in cx - y..=cx + y {
-                for b in cy - x..=cy + x {
-                    self.point(a, b, color_idx);
-                }
-            }
+            // self.point(cx + x, cy + y, color_idx);
+            // self.point(cx - x, cy + y, color_idx);
+            // self.point(cx + x, cy - y, color_idx);
+            // self.point(cx - x, cy - y, color_idx);
+            self.line(cx + x, cy + y, cx - x, cy + y, color_idx);
+            self.line(cx + x, cy - y, cx - x, cy - y, color_idx);
+
+            // self.point(cx + y, cy + x, color_idx);
+            // self.point(cx - y, cy + x, color_idx);
+            // self.point(cx + y, cy - x, color_idx);
+            // self.point(cx - y, cy - x, color_idx);
+
+            self.line(cx + y, cy + x, cx - y, cy + x, color_idx);
+            self.line(cx + y, cy - x, cx - y, cy - x, color_idx);
         }
     }
 

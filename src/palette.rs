@@ -29,28 +29,29 @@ use crate::byte_buffer_reader::ByteBufferReader;
 #[derive(Copy, Clone, Eq, PartialEq, FromPrimitive, Hash)]
 #[repr(u8)]
 pub enum FlaskColor {
-    Black = 1,
-    Blue,
+    Purple = 1,
+    Green,
+    Brown,
     Red,
+    Salad,
+    Teal,
     Yellow,
-    Olive,
-    Mauve,
-    Gray,
     White
 }
 
+// https://lospec.com/palette-list/retrocal-8
+// Sorter variant https://coolors.co/2f142f-2a584f-774448-c6505a-74a33f-6eb8a8-ee9c5d-fcffc0
 pub fn flask_default() -> Vec<Color> {
     let mut palette = vec![];
 
-    // https://coolors.co/000000-3c91e6-d56062-f5b700-60992d-dfb2f4-dbe4ee-ffffff
-    palette.push(Color::from_hex(0x000000));
-    palette.push(Color::from_hex(0x3C91E6));
-    palette.push(Color::from_hex(0xD56062));
-    palette.push(Color::from_hex(0xF5B700));
-    palette.push(Color::from_hex(0x60992D));
-    palette.push(Color::from_hex(0xDFB2F4));
-    palette.push(Color::from_hex(0xDBE4EE));
-    palette.push(Color::from_hex(0xFFFFFF));
+    palette.push(Color::from_hex(0x2f142f));
+    palette.push(Color::from_hex(0x2a584f));
+    palette.push(Color::from_hex(0x774448));
+    palette.push(Color::from_hex(0xc6505a));
+    palette.push(Color::from_hex(0x74a33f));
+    palette.push(Color::from_hex(0x6eb8a8));
+    palette.push(Color::from_hex(0xee9c5d));
+    palette.push(Color::from_hex(0xfcffc0));
 
     palette
 }
