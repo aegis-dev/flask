@@ -399,7 +399,7 @@ impl Input {
         }
     }
 
-    pub fn get_cursor_position(&self) -> (i32, i32)  {
-        (self.cursor_x as i32, self.cursor_y as i32)
+    pub fn get_cursor_position(&self) -> (i64, i64)  {
+        (self.cursor_x as i64, self.cursor_y as i64)
     }
 }
