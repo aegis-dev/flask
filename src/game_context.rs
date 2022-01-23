@@ -17,16 +17,10 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use crate::gl_renderer::GlRenderer;
-use crate::shaders::ShaderProgram;
 use crate::scene::Scene;
 use crate::color::Color;
-use crate::input::Input;
-use crate::renderer::Renderer;
-use crate::frame_buffer::FrameBuffer;
 use crate::game_status::GameStatus;
+use crate::flask_context::FlaskContext;
 
 pub struct GameContext;
 
@@ -39,115 +33,46 @@ impl GameContext {
 
     // This func is mutable to ensure that this object is not used more than once when game is running
     pub fn run(&mut self, buffer_width: u32, buffer_height: u32, game_name: &str, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<(), String> {
-        if buffer_width % 4 != 0 {
-            return Err(String::from("\'buffer_width\' must be 4 byte aligned"));
-        }
-
-        if  buffer_width < buffer_height {
-            return Err(String::from("\'buffer_width\' can't be smaller than \'buffer_height\'"));
-        }
-
-        let sdl = sdl2::init().unwrap();
-        let video_subsystem = sdl.video().unwrap();
-
-        // Hide mouse cursor
-        sdl.mouse().show_cursor(false);
-        sdl.mouse().set_relative_mouse_mode(true);
-
-        // Get primary display bounds
-        let current_display = video_subsystem.display_bounds(0)?;
-        let display_width = current_display.width();
-        let display_height = current_display.height();
-
-        let window = video_subsystem
-            .window(game_name, display_width, display_height)
-            .opengl()
-            .borderless()
-            .build()
-            .unwrap();
-
-        let _gl_context = window.gl_create_context().unwrap();
-        let _gl = gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void);
-
-        // disable vsync
-        video_subsystem.gl_set_swap_interval(0).unwrap();
-
-        unsafe {
-            let modifier = display_height / buffer_height;
-            let viewport_width = (buffer_width * modifier) as i32;
-            let viewport_height = display_height as i32;
-            gl::Viewport(
-                (display_width as i32 - viewport_width) / 2,
-                0,
-                viewport_width,
-                viewport_height
-            );
-        }
-
-        // Load shaders
-        let shader = {
-            use std::ffi::CString;
-            ShaderProgram::load_shaders(
-                &CString::new(include_str!("shaders/screen_shader.vert")).unwrap(),
-                &CString::new(include_str!("shaders/screen_shader.frag")).unwrap(),
-            )
-        };
-
-        let uniform_palette_size_location = 2;
-        let uniform_background_color_index_location = 3;
-
-        let gl_renderer = GlRenderer::new(shader);
-        gl_renderer.set_clear_color(0.0, 0.0, 0.0, 0.0);
-
-        let mut renderer = Renderer::new(FrameBuffer::new(buffer_width, buffer_height), palette)?;
-
-        let mut input = Input::new(
-            buffer_width as i32,
-            buffer_height as i32,
-            display_width as i32,
-            display_height as i32
-        );
-
-        let mut event_pump = sdl.event_pump().unwrap();
+        let mut flask_context = FlaskContext::new(buffer_width, buffer_height, game_name, palette)?;
 
         let mut current_scene = starting_scene;
 
-        current_scene.on_start(&mut renderer);
+        current_scene.on_start(&mut flask_context.get_renderer_mut());
 
-        let delta_time = GameContext::time_now();
+        let delta_time = FlaskContext::time_now();
         let mut last_frame_time = delta_time;
 
         let mut game_status = GameStatus::new();
         'main_loop: loop {
-            for event in event_pump.poll_iter() {
-                match event {
-                    sdl2::event::Event::Quit {..} => break 'main_loop,
-                    _ => {},
-                }
-
-                match input.process_sdl_event(&event) {
-                    Err(error) => println!("{}", error),
-                    Ok(_) => {}
-                };
+            let input = flask_context.poll_input_events();
+            if input.should_quit() {
+                break 'main_loop;
             }
 
-            let time_now = GameContext::time_now();
+            let time_now = FlaskContext::time_now();
             if time_now >= last_frame_time + GameContext::TICK_RATE {
                 let delta_time = time_now - last_frame_time;
                 last_frame_time = time_now;
 
                 // Update scene
-                match current_scene.on_update(&mut game_status, &mut renderer, &input, delta_time as f64 / 1000.0) {
+                match current_scene.on_update(
+                    &mut game_status,
+                    flask_context.get_renderer_mut(),
+                    &input,
+                    delta_time as f64 / 1000.0
+                ) {
                     Some(scene) => {
                         current_scene.on_destroy();
                         current_scene = scene;
+
+                        let renderer = flask_context.get_renderer_mut();
 
                         // Reset renderer
                         renderer.set_camera_x(0);
                         renderer.set_camera_y(0);
                         renderer.set_background_color(1).unwrap();
 
-                        current_scene.on_start(&mut renderer);
+                        current_scene.on_start(renderer);
                     }
                     _ => {
                         if game_status.should_quit() {
@@ -156,34 +81,10 @@ impl GameContext {
                     }
                 };
 
-                // TODO: add proper debug mode
-                //let update_time = GameContext::time_now();
-
-                // Update render texture
-                renderer.swap()?;
-                //println!("update: {0}, + swap: {1}", update_time - time_now, GameContext::time_now() - time_now);
-
-                gl_renderer.clear_buffer();
-
-                gl_renderer.begin_rendering();
-
-                let palette_texture = renderer.get_palette_texture();
-                gl_renderer.set_uniform_int(uniform_palette_size_location, palette_texture.width() as i32);
-                gl_renderer.set_uniform_int(uniform_background_color_index_location, renderer.get_background_color() as i32);
-
-                let frame_buffer = renderer.get_frame_buffer();
-                gl_renderer.render(frame_buffer.get_quad(), frame_buffer.get_texture(), palette_texture);
-
-                gl_renderer.end_rendering();
-
-                window.gl_swap_window();
+                flask_context.render_and_swap()?;
             }
         }
 
         Ok(())
-    }
-
-    pub fn time_now() -> u128 {
-        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()
     }
 }

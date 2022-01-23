@@ -26,6 +26,7 @@ use sdl2::mouse::MouseButton;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
+#[derive(Clone)]
 pub struct Input {
     cursor_x: f32,
     cursor_y: f32,
@@ -37,6 +38,7 @@ pub struct Input {
     cursor_y_sensitivity: f32,
     key_state: HashMap<Key, State>,
     mouse_button_state: HashMap<Button, State>,
+    should_quit: bool,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, FromPrimitive, Hash)]
@@ -310,7 +312,8 @@ impl Input {
             cursor_x_sensitivity: screen_buffer_width as f32 / screen_width as f32,
             cursor_y_sensitivity: screen_buffer_height as f32 / screen_height as f32,
             key_state: HashMap::new(),
-            mouse_button_state: HashMap::new()
+            mouse_button_state: HashMap::new(),
+            should_quit: false,
         }
     }
 
@@ -386,6 +389,11 @@ impl Input {
                 self.mouse_button_state.insert(Button::from_i32(*mouse_btn as i32).ok_or_else(|| "unknown button")?, State::Down);
 
             }
+            Event::Quit {
+                timestamp
+            } => {
+                self.should_quit = true
+            }
             _ => { }
         };
 
@@ -401,5 +409,9 @@ impl Input {
 
     pub fn get_cursor_position(&self) -> (i64, i64)  {
         (self.cursor_x as i64, self.cursor_y as i64)
+    }
+
+    pub fn should_quit(&self) -> bool {
+        self.should_quit
     }
 }
