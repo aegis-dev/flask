@@ -82,6 +82,7 @@ impl GameContext {
                 };
 
                 flask_context.render_and_swap()?;
+                flask_context.clear_screen();
             }
         }
 

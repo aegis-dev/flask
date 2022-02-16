@@ -25,8 +25,7 @@ pub struct FrameBuffer {
     buffer_height: u32,
     frame_buffer_quad: Mesh,
     frame_buffer_texture: Texture,
-    current_frame_buffer: u8,
-    frame_buffers: [Vec<u8>; 2],
+    frame_buffer: Vec<u8>,
 }
 
 impl FrameBuffer {
@@ -49,17 +48,15 @@ impl FrameBuffer {
         ];
 
         let frame_buffer_quad = Mesh::from_data(&vertices, &texture_coords, &indices);
-        let front_frame_buffer: Vec<u8> = vec![0; (buffer_width * buffer_height) as usize];
-        let back_frame_buffer: Vec<u8> = vec![0; (buffer_width * buffer_height) as usize];
-        let frame_buffer_texture = Texture::from_data(&front_frame_buffer, buffer_width, buffer_height, ImageMode::RED);
+        let frame_buffer: Vec<u8> = vec![0; (buffer_width * buffer_height) as usize];
+        let frame_buffer_texture = Texture::from_data(&frame_buffer, buffer_width, buffer_height, ImageMode::RED);
 
         FrameBuffer {
             buffer_width,
             buffer_height,
             frame_buffer_quad,
             frame_buffer_texture,
-            current_frame_buffer: 0,
-            frame_buffers: [ front_frame_buffer, back_frame_buffer ]
+            frame_buffer
         }
     }
 
@@ -71,13 +68,10 @@ impl FrameBuffer {
         self.buffer_height
     }
 
-    pub fn update_frame_texture(&mut self) -> Result<(), String> {
-        let back_buffer_idx = self.current_frame_buffer ^ 1;
-        let back_buffer = &self.frame_buffers[back_buffer_idx as usize];
+    pub fn render_to_texture(&self) -> Result<&Texture, String> {
+        self.frame_buffer_texture.update_texture_data(&self.frame_buffer, ImageMode::RED);
 
-        self.frame_buffer_texture.update_texture_data(&back_buffer, self.buffer_width, self.buffer_height, ImageMode::RED);
-
-        Ok(())
+        Ok(&self.frame_buffer_texture)
     }
 
     pub fn get_quad(&self) -> &Mesh {
@@ -88,14 +82,9 @@ impl FrameBuffer {
         &self.frame_buffer_texture
     }
 
-    pub fn swap_buffers(&mut self) {
-        self.current_frame_buffer ^= 1;
-    }
-
     pub fn clear_screen(&mut self) {
         // It's much faster to allocate new buffer than iterating it and setting color
-        let buffer = &mut self.frame_buffers[self.current_frame_buffer as usize];
-        *buffer = vec![0; (self.buffer_width * self.buffer_height) as usize]
+        self.frame_buffer = vec![0; (self.buffer_width * self.buffer_height) as usize]
     }
 
     pub fn set_pixel(&mut self, x: u32, y: u32, color_idx: u8) {
@@ -105,6 +94,6 @@ impl FrameBuffer {
 
         let pixel_offset = y * self.buffer_width + x;
         // I am assuring that it is safe just to unwrap since buffer size never changes
-        *self.frame_buffers[self.current_frame_buffer as usize].get_mut(pixel_offset as usize).unwrap() = color_idx;
+        *self.frame_buffer.get_mut(pixel_offset as usize).unwrap() = color_idx;
     }
 }

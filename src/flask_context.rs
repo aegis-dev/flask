@@ -143,13 +143,18 @@ impl FlaskContext {
         &mut self.renderer
     }
 
+    pub fn clear_screen(&mut self) {
+        self.renderer.clear_screen();
+    }
+
     pub fn render_and_swap(&mut self) -> Result<(), String> {
-        self.renderer.swap()?;
         let frame_buffer = self.renderer.get_frame_buffer();
         self.render_buffer_and_swap(&frame_buffer)
     }
 
     pub fn render_buffer_and_swap(&self, frame_buffer: &FrameBuffer) -> Result<(), String> {
+        let texture = frame_buffer.render_to_texture()?;
+
         self.gl_renderer.clear_buffer();
 
         self.gl_renderer.begin_rendering();
@@ -158,7 +163,7 @@ impl FlaskContext {
         self.gl_renderer.set_uniform_int(UNIFORM_PALETTE_SIZE_LOCATION, palette_texture.width() as i32);
         self.gl_renderer.set_uniform_int(UNIFORM_BACKGROUND_COLOR_INDEX_LOCATION, self.renderer.get_background_color() as i32);
 
-        self.gl_renderer.render(frame_buffer.get_quad(), frame_buffer.get_texture(), palette_texture);
+        self.gl_renderer.render(frame_buffer.get_quad(), texture, palette_texture);
 
         self.gl_renderer.end_rendering();
 

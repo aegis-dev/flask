@@ -84,10 +84,7 @@ impl Texture {
         self.height
     }
 
-    pub fn update_texture_data(&mut self, data: &Vec<u8>, width: gl::types::GLuint, height: gl::types::GLuint, mode: ImageMode) {
-        self.width = width;
-        self.height = height;
-
+    pub fn update_texture_data(&self, data: &Vec<u8>, mode: ImageMode) {
         unsafe {
             gl::BindTexture(gl::TEXTURE_2D, self.texture_id);
 
@@ -100,8 +97,8 @@ impl Texture {
                 gl::TEXTURE_2D,
                 0,
                 internal_format,
-                width as gl::types::GLint,
-                height as gl::types::GLint,
+                self.width as gl::types::GLint,
+                self.height as gl::types::GLint,
                 0,
                 mode as gl::types::GLuint,
                 gl::UNSIGNED_BYTE,

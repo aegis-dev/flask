@@ -73,10 +73,8 @@ impl Renderer {
         Ok(Texture::from_data(&palette_texture_data, palette.len() as u32, 1, ImageMode::RGB))
     }
 
-    pub fn swap(&mut self) -> Result<(), String> {
-        self.frame_buffer.swap_buffers();
+    pub fn clear_screen(&mut self) {
         self.frame_buffer.clear_screen();
-        self.frame_buffer.update_frame_texture()
     }
 
     pub fn get_frame_buffer(&self) -> &FrameBuffer {
