@@ -12,5 +12,5 @@ num-derive = "0.3.3"
 png = "0.16.8"
 
 [dependencies.sdl2]
-version = "0.34.4"
+version = "0.35.2"
 features = ["bundled", "static-link"]

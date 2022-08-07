@@ -1,5 +1,5 @@
 //
-// Copyright © 2020-2021  Egidijus Lileika
+// Copyright © 2020-2022  Egidijus Lileika
 //
 // This file is part of Flask - Framework for 2D game development
 //
@@ -30,6 +30,7 @@ use crate::color::Color;
 use crate::input::Input;
 use crate::renderer::Renderer;
 use crate::frame_buffer::FrameBuffer;
+use sdl2::event::Event;
 
 pub struct FlaskContext {
     buffer_width: u32,
@@ -137,6 +138,11 @@ impl FlaskContext {
         }
 
         self.input.clone()
+    }
+
+    pub fn poll_sdl_input_event(&mut self) -> Option<Event> {
+        let mut event_pump = self.sdl.event_pump().unwrap();
+        event_pump.poll_event()
     }
 
     pub fn get_renderer_mut(&mut self) -> &mut Renderer {
