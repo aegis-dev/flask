@@ -386,7 +386,7 @@ impl Input {
                 x,
                 y,
             } => {
-                self.mouse_button_state.insert(Button::from_i32(*mouse_btn as i32).ok_or_else(|| "unknown button")?, State::Down);
+                self.mouse_button_state.insert(Button::from_i32(*mouse_btn as i32).ok_or_else(|| "unknown button")?, State::Up);
 
             }
             Event::Quit {
@@ -402,6 +402,13 @@ impl Input {
 
     pub fn get_key_state(&self, key: Key) -> State {
         match self.key_state.get(&key) {
+            None => State::Up,
+            Some(state) => *state
+        }
+    }
+
+    pub fn get_button_state(&self, button: Button) -> State {
+        match self.mouse_button_state.get(&button) {
             None => State::Up,
             Some(state) => *state
         }
