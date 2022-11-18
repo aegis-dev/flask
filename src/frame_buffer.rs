@@ -17,6 +17,8 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
+use web_sys::WebGl2RenderingContext;
+
 use crate::mesh::Mesh;
 use crate::texture::{Texture, ImageMode};
 
@@ -29,7 +31,7 @@ pub struct FrameBuffer {
 }
 
 impl FrameBuffer {
-    pub fn new(buffer_width: u32, buffer_height: u32) -> FrameBuffer {
+    pub fn new(gl_context: WebGl2RenderingContext, buffer_width: u32, buffer_height: u32) -> FrameBuffer {
         let vertices = vec![
             -1.0, -1.0, 0.0, // bot left
             -1.0,  1.0, 0.0, // top left
@@ -47,9 +49,9 @@ impl FrameBuffer {
             3, 0, 2
         ];
 
-        let frame_buffer_quad = Mesh::from_data(&vertices, &texture_coords, &indices);
+        let frame_buffer_quad = Mesh::from_data(gl_context.clone(), &vertices, &texture_coords, &indices);
         let frame_buffer: Vec<u8> = vec![0; (buffer_width * buffer_height) as usize];
-        let frame_buffer_texture = Texture::from_data(&frame_buffer, buffer_width, buffer_height, ImageMode::RED);
+        let frame_buffer_texture = Texture::from_data(gl_context, &frame_buffer, buffer_width, buffer_height, ImageMode::RED);
 
         FrameBuffer {
             buffer_width,

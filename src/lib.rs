@@ -19,14 +19,16 @@
 
 #![allow(dead_code)]
 
-extern crate gl;
-extern crate sdl2;
+extern crate js_sys;
+extern crate wasm_bindgen;
+extern crate web_sys;
 
 mod shaders;
 mod mesh;
 mod texture;
 mod gl_renderer;
 mod byte_buffer_reader;
+mod macros;
 pub mod game_context;
 pub mod game_status;
 pub mod scene;

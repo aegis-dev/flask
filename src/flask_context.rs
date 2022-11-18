@@ -19,10 +19,12 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use sdl2::Sdl;
-use sdl2::VideoSubsystem;
-use sdl2::video::Window;
-use sdl2::video::GLContext;
+use js_sys::WebAssembly;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use web_sys::{
+    EventTarget, MouseEvent, WebGlBuffer, WebGlProgram, WebGl2RenderingContext, WebGlUniformLocation,
+};
 
 use crate::gl_renderer::GlRenderer;
 use crate::shaders::ShaderProgram;
@@ -30,15 +32,13 @@ use crate::color::Color;
 use crate::input::Input;
 use crate::renderer::Renderer;
 use crate::frame_buffer::FrameBuffer;
-use sdl2::event::Event;
+
 
 pub struct FlaskContext {
     buffer_width: u32,
     buffer_height: u32,
-    sdl: Sdl,
-    video_subsystem: VideoSubsystem,
-    window: Window,
-    gl_context: GLContext,
+    canvas: web_sys::HtmlCanvasElement,
+    gl_context: web_sys::WebGl2RenderingContext,
     gl_renderer: GlRenderer,
     renderer: Renderer,
     input: Input,
@@ -57,56 +57,60 @@ impl FlaskContext {
             return Err(String::from("\'buffer_width\' can't be smaller than \'buffer_height\'"));
         }
 
-        let sdl = sdl2::init().unwrap();
-        let video_subsystem = sdl.video().unwrap();
+        let document = web_sys::window().unwrap().document().unwrap();
+        let canvas = document.get_element_by_id("canvas").unwrap();
+        let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>().unwrap();
+        let gl_context: web_sys::WebGl2RenderingContext = canvas.get_context("webgl2").unwrap().unwrap().dyn_into::<WebGl2RenderingContext>().unwrap();
 
-        // Hide mouse cursor
-        sdl.mouse().show_cursor(false);
-        sdl.mouse().set_relative_mouse_mode(true);
+//        // Hide mouse cursor
+//        sdl.mouse().show_cursor(false);
+//        sdl.mouse().set_relative_mouse_mode(true);
+//
+//        // Get primary display bounds
+//        let current_display = video_subsystem.display_bounds(0)?;
+//        let display_width = current_display.width();
+//        let display_height = current_display.height();
+//
+//        let window = video_subsystem
+//            .window(game_name, display_width, display_height)
+//            .opengl()
+//            .borderless()
+//            .build()
+//            .unwrap();
 
-        // Get primary display bounds
-        let current_display = video_subsystem.display_bounds(0)?;
-        let display_width = current_display.width();
-        let display_height = current_display.height();
+//        let gl_context = window.gl_create_context().unwrap();
+//        gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void);
 
-        let window = video_subsystem
-            .window(game_name, display_width, display_height)
-            .opengl()
-            .borderless()
-            .build()
-            .unwrap();
+//        // disable vsync
+//        video_subsystem.gl_set_swap_interval(0).unwrap();
 
-        let gl_context = window.gl_create_context().unwrap();
-        gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void);
+        let display_width = canvas.width();
+        let display_height = canvas.height();
 
-        // disable vsync
-        video_subsystem.gl_set_swap_interval(0).unwrap();
+        let modifier = display_height / buffer_height;
+        let viewport_width = (buffer_width * modifier) as i32;
+        let viewport_height = display_height as i32;
 
-        unsafe {
-            let modifier = display_height / buffer_height;
-            let viewport_width = (buffer_width * modifier) as i32;
-            let viewport_height = display_height as i32;
-            gl::Viewport(
-                (display_width as i32 - viewport_width) / 2,
-                0,
-                viewport_width,
-                viewport_height
-            );
-        }
+        gl_context.viewport(
+            (display_width as i32 - viewport_width) / 2,
+            0,
+            viewport_width,
+            viewport_height
+        );
 
         // Load shaders
         let shader = {
-            use std::ffi::CString;
             ShaderProgram::load_shaders(
-                &CString::new(include_str!("shaders/screen_shader.vert")).unwrap(),
-                &CString::new(include_str!("shaders/screen_shader.frag")).unwrap(),
+                gl_context.clone(),
+                &String::from(include_str!("shaders/screen_shader.vert")),
+                &String::from(include_str!("shaders/screen_shader.frag"))
             )
         };
 
-        let gl_renderer = GlRenderer::new(shader);
+        let gl_renderer = GlRenderer::new(gl_context.clone(), shader);
         gl_renderer.set_clear_color(0.0, 0.0, 0.0, 0.0);
 
-        let renderer = Renderer::new(FrameBuffer::new(buffer_width, buffer_height), palette)?;
+        let renderer = Renderer::new(gl_context.clone(), FrameBuffer::new(gl_context.clone(), buffer_width, buffer_height), palette)?;
 
         let input = Input::new(
             buffer_width as i32,
@@ -115,34 +119,20 @@ impl FlaskContext {
             display_height as i32
         );
 
-        Ok(FlaskContext {
-            buffer_width,
-            buffer_height,
-            sdl,
-            video_subsystem,
-            window,
-            gl_context,
-            gl_renderer,
-            renderer,
-            input
-        })
+        Ok(FlaskContext { buffer_width, buffer_height, canvas, gl_context, gl_renderer, renderer, input })
     }
 
     pub fn poll_input_events(&mut self) -> Input {
-        let mut event_pump = self.sdl.event_pump().unwrap();
-        for event in event_pump.poll_iter() {
-            match self.input.process_sdl_event(&event) {
-                Err(error) => println!("{}", error),
-                Ok(_) => {}
-            };
-        }
-
-        self.input.clone()
-    }
-
-    pub fn poll_sdl_input_event(&mut self) -> Option<Event> {
-        let mut event_pump = self.sdl.event_pump().unwrap();
-        event_pump.poll_event()
+//        let mut event_pump = self.sdl.event_pump().unwrap();
+//        for event in event_pump.poll_iter() {
+//            match self.input.process_sdl_event(&event) {
+//                Err(error) => println!("{}", error),
+//                Ok(_) => {}
+//            };
+//        }
+//
+//        self.input.clone()
+        Input {  }
     }
 
     pub fn get_renderer_mut(&mut self) -> &mut Renderer {
@@ -172,8 +162,6 @@ impl FlaskContext {
         self.gl_renderer.render(frame_buffer.get_quad(), texture, palette_texture);
 
         self.gl_renderer.end_rendering();
-
-        self.window.gl_swap_window();
 
         Ok(())
     }

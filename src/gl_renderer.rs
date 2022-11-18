@@ -19,31 +19,28 @@
 
 use std::ptr::null;
 
-use gl;
+use web_sys::{WebGl2RenderingContext, WebGlUniformLocation};
 
 use crate::shaders::ShaderProgram;
 use crate::mesh::Mesh;
 use crate::texture::Texture;
 
 pub struct GlRenderer {
+    gl_context: WebGl2RenderingContext,
     shader: ShaderProgram,
 }
 
 impl GlRenderer {
-    pub fn new(shader: ShaderProgram) -> GlRenderer {
-        unsafe {
-            gl::Disable(gl::DEPTH_TEST);
-            gl::Enable(gl::BLEND);
-            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-        }
+    pub fn new(gl_context: WebGl2RenderingContext, shader: ShaderProgram) -> GlRenderer {
+        gl_context.disable(WebGl2RenderingContext::DEPTH_TEST);
+        gl_context.enable(WebGl2RenderingContext::BLEND);
+        gl_context.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
 
-        GlRenderer { shader }
+        GlRenderer { gl_context, shader }
     }
 
     pub fn clear_buffer(&self) {
-        unsafe {
-            gl::Clear(gl::COLOR_BUFFER_BIT);
-        }
+        self.gl_context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
     pub fn begin_rendering(&self) {
@@ -55,32 +52,28 @@ impl GlRenderer {
     }
 
     pub fn set_clear_color(&self, r: f32, g: f32, b: f32, a: f32) {
-        unsafe {
-            gl::ClearColor(r, g, b, a);
-        }
+        self.gl_context.clear_color(r, g, b, a);
     }
 
-    pub fn set_uniform_int(&self, location: i32, value: i32) {
+    pub fn set_uniform_int(&self, location: &WebGlUniformLocation, value: i32) {
         self.shader.set_uniform_int(location, value);
     }
 
     pub fn render(&self, mesh: &Mesh, texture: &Texture, palette: &Texture) {
-        unsafe {
-            gl::BindVertexArray(mesh.vao_id());
-            gl::EnableVertexAttribArray(0);
-            gl::EnableVertexAttribArray(1);
+        self.gl_context.bind_vertex_array(Some(mesh.vao()));
+        self.gl_context.enable_vertex_attrib_array(0);
+        self.gl_context.enable_vertex_attrib_array(1);
 
-            gl::ActiveTexture(gl::TEXTURE0);
-            gl::BindTexture(gl::TEXTURE_2D, texture.texture_id());
+        self.gl_context.active_texture(WebGl2RenderingContext::TEXTURE0);
+        self.gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&texture.texture()));
 
-            gl::ActiveTexture(gl::TEXTURE1);
-            gl::BindTexture(gl::TEXTURE_2D, palette.texture_id());
+        self.gl_context.active_texture(WebGl2RenderingContext::TEXTURE1);
+        self.gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&palette.texture()));
 
-            gl::DrawElements(gl::TRIANGLES, mesh.indices_count(), gl::UNSIGNED_INT, null());
+        self.gl_context.draw_elements_with_i32(WebGl2RenderingContext::TRIANGLES, mesh.indices_count(), WebGl2RenderingContext::UNSIGNED_INT, 0);
 
-            gl::DisableVertexAttribArray(0);
-            gl::DisableVertexAttribArray(1);
-            gl::BindVertexArray(0);
-        }
+        self.gl_context.disable_vertex_attrib_array(0);
+        self.gl_context.disable_vertex_attrib_array(1);
+        self.gl_context.bind_vertex_array(None);
     }
 }
