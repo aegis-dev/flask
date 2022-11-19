@@ -17,8 +17,6 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use std;
-
 use web_sys::{WebGl2RenderingContext, WebGlShader, WebGlProgram, WebGlUniformLocation};
 
 
@@ -28,20 +26,11 @@ pub struct ShaderProgram {
 }
 
 impl ShaderProgram {
-    pub fn load_shaders(gl_context: WebGl2RenderingContext, vert_shader_source: &String, frag_vert_source: &String) -> ShaderProgram {
-        let vert_shader = match Shader::from_vert_source(&gl_context, vert_shader_source) {
-            Ok(shader) => shader,
-            Err(error) => panic!("Failed to compile vertex shader: {:?}", error)
-        };
-        let frag_shader = match Shader::from_frag_source(&gl_context, frag_vert_source) {
-            Ok(shader) => shader,
-            Err(error) => panic!("Failed to compile fragment shader: {:?}", error)
-        };
-
-        match ShaderProgram::link_program(&gl_context, &vert_shader, &frag_shader) {
-            Ok(program) => ShaderProgram { gl_context, program },
-            Err(error) => panic!("Failed to compile shader program: {:?}", error)
-        }
+    pub fn load_shaders(gl_context: WebGl2RenderingContext, vert_shader_source: &String, frag_vert_source: &String) -> Result<ShaderProgram, String> {
+        let vert_shader = Shader::from_vert_source(&gl_context, vert_shader_source)?;
+        let frag_shader = Shader::from_frag_source(&gl_context, frag_vert_source)?;
+        let program = ShaderProgram::link_program(&gl_context, &vert_shader, &frag_shader)?;
+        Ok(ShaderProgram { gl_context, program })
     }
 
     pub fn enable(&self) {
@@ -52,27 +41,29 @@ impl ShaderProgram {
         self.gl_context.use_program(None);
     }
 
-    pub fn set_uniform_int(&self, location: &WebGlUniformLocation, value: i32) {
-        self.gl_context.uniform1i(Some(location), value)
+    pub fn get_uniform_location(&self, uniform_name: &str) -> Option<WebGlUniformLocation> {
+        self.gl_context.get_uniform_location(&self.program, uniform_name)
     }
 
-    pub fn link_program(
-            context: &WebGl2RenderingContext,
+    pub fn set_uniform_int(&self, location: &WebGlUniformLocation, value: i32) {
+        self.gl_context.uniform1i(Some(location), value);
+    }
+
+    fn link_program(
+            gl_context: &WebGl2RenderingContext,
             vert_shader: &Shader,
             frag_shader: &Shader,
     ) -> Result<WebGlProgram, String> {
-        let program = context.create_program().ok_or_else(|| String::from("Unable to create shader object"))?;
+        let program = gl_context.create_program().ok_or_else(|| String::from("Unable to create shader object"))?;
 
-        context.attach_shader(&program, vert_shader.get_shader());
-        context.attach_shader(&program, frag_shader.get_shader());
-        context.link_program(&program);
+        gl_context.attach_shader(&program, vert_shader.get_shader());
+        gl_context.attach_shader(&program, frag_shader.get_shader());
+        gl_context.link_program(&program);
 
-        if context.get_program_parameter(&program, WebGl2RenderingContext::LINK_STATUS).as_bool().unwrap_or(false) {
+        if gl_context.get_program_parameter(&program, WebGl2RenderingContext::LINK_STATUS).as_bool().unwrap_or(false) {
             Ok(program)
         } else {
-            Err(context
-            .get_program_info_log(&program)
-            .unwrap_or_else(|| String::from("Unknown error creating program object")))
+            Err(gl_context.get_program_info_log(&program).unwrap_or_else(|| String::from("Unknown error creating program object")))
         }
     }
 }

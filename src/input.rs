@@ -20,7 +20,7 @@
 pub struct Input { }
 
 impl Input {
-    pub fn new(screen_buffer_width: i32, screen_buffer_height: i32, screen_width: i32, screen_height: i32) -> Input {
+    pub fn new() -> Input {
         Input {  }
     }
 }

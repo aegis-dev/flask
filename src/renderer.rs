@@ -74,7 +74,7 @@ impl Renderer {
             palette_texture_data.push(color.b);
         }
 
-        Ok(Texture::from_data(gl_context.clone(), &palette_texture_data, palette.len() as u32, 1, ImageMode::RGB))
+        Ok(Texture::from_data(gl_context.clone(), &palette_texture_data, palette.len() as u32, 1, ImageMode::RGB, WebGl2RenderingContext::TEXTURE1))
     }
 
     pub fn clear_screen(&mut self) {

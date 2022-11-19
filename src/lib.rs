@@ -28,7 +28,7 @@ mod mesh;
 mod texture;
 mod gl_renderer;
 mod byte_buffer_reader;
-mod macros;
+mod js_utils;
 pub mod game_context;
 pub mod game_status;
 pub mod scene;
@@ -41,3 +41,7 @@ pub mod font;
 pub mod palette;
 pub mod flask_context;
 pub mod colliders;
+
+pub fn log(message: &str) {
+    crate::js_utils::js_log(format!("[flask] {}", message).as_str());
+}

@@ -17,9 +17,10 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
+
 use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject, WebGlBuffer};
 
-use crate::{js_float_32_array, js_uint_32_array};
+use crate::js_utils::{js_float_32_array, js_uint_32_array};
 
 
 pub struct Mesh {
@@ -50,7 +51,7 @@ impl Mesh {
     fn bind_indices_buffer(gl_context: &WebGl2RenderingContext, indices: &Vec<u32>) -> WebGlBuffer {
         let vbo = gl_context.create_buffer().unwrap();
 
-        let indices_js_array = js_uint_32_array!(indices.as_slice());
+        let indices_js_array = js_uint_32_array(indices.as_slice());
         gl_context.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(&vbo));
         gl_context.buffer_data_with_array_buffer_view(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, &indices_js_array, WebGl2RenderingContext::STATIC_DRAW);
         gl_context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, None);
@@ -61,7 +62,7 @@ impl Mesh {
     fn store_data_in_attribute_list(gl_context: &WebGl2RenderingContext, attribute_id: u32, attribute_size: i32, data: &Vec<f32>) -> WebGlBuffer {
         let vbo = gl_context.create_buffer().unwrap();
 
-        let data_js_array = js_float_32_array!(data.as_slice());
+        let data_js_array = js_float_32_array(data.as_slice());
         gl_context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&vbo));
         gl_context.buffer_data_with_array_buffer_view(WebGl2RenderingContext::ARRAY_BUFFER, &data_js_array, WebGl2RenderingContext::STATIC_DRAW);
         gl_context.vertex_attrib_pointer_with_i32(attribute_id, attribute_size, WebGl2RenderingContext::FLOAT, false, 0, 0);

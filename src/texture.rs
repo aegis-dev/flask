@@ -19,10 +19,12 @@
 
 use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
+use crate::js_utils::js_uint_8_array;
 
 pub struct Texture {
     gl_context: WebGl2RenderingContext,
     texture: WebGlTexture,
+    texture_id: u32,
     width: u32,
     height: u32,
 }
@@ -35,28 +37,43 @@ pub enum ImageMode {
 }
 
 impl Texture {
-    pub fn from_data(gl_context: WebGl2RenderingContext, data: &Vec<u8>, width: u32, height: u32, mode: ImageMode) -> Texture {
+    pub fn from_data(gl_context: WebGl2RenderingContext, data: &Vec<u8>, width: u32, height: u32, mode: ImageMode, texture_id: u32) -> Texture {
         let texture = gl_context.create_texture().unwrap();
 
+        gl_context.active_texture(texture_id);
         gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&texture));
         gl_context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_S, WebGl2RenderingContext::REPEAT as i32);
         gl_context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_T, WebGl2RenderingContext::REPEAT as i32);
         gl_context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_MIN_FILTER, WebGl2RenderingContext::NEAREST as i32);
         gl_context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_MAG_FILTER, WebGl2RenderingContext::NEAREST as i32);
 
-        gl_context.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
+        let internal_format = match mode {
+            ImageMode::RED => WebGl2RenderingContext::R8,
+            ImageMode::RGB => WebGl2RenderingContext::RGB,
+            ImageMode::RGBA => WebGl2RenderingContext::RGBA,
+        };
+
+        let data_js_array = js_uint_8_array(data.as_slice());
+        gl_context.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
                 WebGl2RenderingContext::TEXTURE_2D,
                 0,
-                mode as i32,
+                internal_format as i32,
                 width as i32,
                 height as i32,
                 0,
                 mode as u32,
                 WebGl2RenderingContext::UNSIGNED_BYTE,
-                Some(data.as_slice())
-        );
+                &data_js_array,
+                0
+        ).unwrap();
 
-        Texture { gl_context, texture, width, height }
+        gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
+
+        Texture { gl_context, texture, texture_id, width, height }
+    }
+
+    pub fn texture_id(&self) -> u32 {
+        self.texture_id
     }
 
     pub fn texture(&self) -> &WebGlTexture {
@@ -72,18 +89,29 @@ impl Texture {
     }
 
     pub fn update_texture_data(&self, data: &Vec<u8>, mode: ImageMode) {
+        let internal_format = match mode {
+            ImageMode::RED => WebGl2RenderingContext::R8,
+            ImageMode::RGB => WebGl2RenderingContext::RGB,
+            ImageMode::RGBA => WebGl2RenderingContext::RGBA,
+        };
+
+        self.gl_context.active_texture(self.texture_id);
         self.gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&self.texture));
-        self.gl_context.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
+        let data_js_array = js_uint_8_array(data.as_slice());
+        self.gl_context.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
                 WebGl2RenderingContext::TEXTURE_2D,
                 0,
-                mode as i32,
+                internal_format as i32,
                 self.width as i32,
                 self.height as i32,
                 0,
                 mode as u32,
                 WebGl2RenderingContext::UNSIGNED_BYTE,
-                Some(data.as_slice())
-         );
+                &data_js_array,
+                0
+         ).unwrap();
+
+        self.gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
     }
 }
 

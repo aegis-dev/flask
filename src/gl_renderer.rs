@@ -17,8 +17,6 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use std::ptr::null;
-
 use web_sys::{WebGl2RenderingContext, WebGlUniformLocation};
 
 use crate::shaders::ShaderProgram;
@@ -64,10 +62,10 @@ impl GlRenderer {
         self.gl_context.enable_vertex_attrib_array(0);
         self.gl_context.enable_vertex_attrib_array(1);
 
-        self.gl_context.active_texture(WebGl2RenderingContext::TEXTURE0);
+        self.gl_context.active_texture(texture.texture_id());
         self.gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&texture.texture()));
 
-        self.gl_context.active_texture(WebGl2RenderingContext::TEXTURE1);
+        self.gl_context.active_texture(palette.texture_id());
         self.gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&palette.texture()));
 
         self.gl_context.draw_elements_with_i32(WebGl2RenderingContext::TRIANGLES, mesh.indices_count(), WebGl2RenderingContext::UNSIGNED_INT, 0);
