@@ -19,15 +19,15 @@
 
 use wasm_bindgen::JsCast;
 use js_sys::Date;
-use web_sys::Window;
+use web_sys::{Window, HtmlCanvasElement};
 use web_sys::{
     WebGl2RenderingContext, WebGlUniformLocation,
 };
 
 use crate::gl_renderer::GlRenderer;
+use crate::input::init_input_handlers;
 use crate::shaders::ShaderProgram;
 use crate::color::Color;
-use crate::input::Input;
 use crate::renderer::Renderer;
 use crate::frame_buffer::FrameBuffer;
 use crate::log;
@@ -46,7 +46,7 @@ pub struct FlaskContext {
 }
 
 impl FlaskContext {
-    pub fn new(buffer_width: u32, buffer_height: u32, palette: Vec<Color>) -> Result<FlaskContext, String> {
+    pub fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: Vec<Color>) -> Result<FlaskContext, String> {
         log("Creating FlaskContext...");
 
         if buffer_width % 4 != 0 {
@@ -115,7 +115,15 @@ impl FlaskContext {
 
         let renderer = Renderer::new(gl_context.clone(), FrameBuffer::new(gl_context.clone(), buffer_width, buffer_height), palette)?;
 
-        // TODO: add input
+        init_input_handlers(
+                &window,
+                &canvas,
+                buffer_width as i32,
+                buffer_height as i32,
+                display_width as i32,
+                display_height as i32,
+                fullscreen
+        );
 
         log("FlaskContext created");
 
@@ -134,6 +142,10 @@ impl FlaskContext {
 
     pub fn get_window() -> Window {
         web_sys::window().expect("Global `window` doesn't exists")
+    }
+
+    pub fn get_canvas(&self) -> HtmlCanvasElement {
+        self.canvas.clone()
     }
 
     pub fn get_renderer_mut(&mut self) -> &mut Renderer {
@@ -165,8 +177,8 @@ impl FlaskContext {
         self.gl_renderer.end_rendering();
     }
 
-    pub fn time_now() -> u128 {
-        Date::new_0().get_milliseconds() as u128
+    pub fn time_now() -> i128 {
+        Date::new_0().get_milliseconds() as i128
     }
 }
 

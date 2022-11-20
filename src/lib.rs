@@ -19,6 +19,7 @@
 
 #![allow(dead_code)]
 
+extern crate lazy_static;
 extern crate js_sys;
 extern crate wasm_bindgen;
 extern crate web_sys;

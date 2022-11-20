@@ -11,19 +11,17 @@ js-sys = "0.3.60"
 num-traits = "0.2.14"
 num-derive = "0.3.3"
 png = "0.16.8"
+lazy_static = "1.4.0"
 
 [dependencies.web-sys]
 version = "0.3.60"
 features = [
-    'CanvasRenderingContext2d',
-    'CssStyleDeclaration',
     'Document',
     'Element',
-    'EventTarget',
     'HtmlCanvasElement',
     'HtmlElement',
     'MouseEvent',
-    'Node',
+    'KeyboardEvent',
     'Window',
     'WebGlBuffer',
     'WebGl2RenderingContext',
@@ -34,5 +32,4 @@ features = [
     'WebGlVertexArrayObject',
     'console',
     'Event',
-    'MouseEventInit',
 ]

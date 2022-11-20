@@ -33,17 +33,17 @@ use crate::log;
 pub struct GameContext {
     flask_context: FlaskContext,
     current_scene: Box<dyn Scene>,
-    last_frame_time: u128,
+    last_frame_time: i128,
     game_status: GameStatus,
 }
 
 impl GameContext {
     const TICK_RATE: u128 = (1.0f64 / 60.0f64 * 1000.0f64) as u128;
 
-    fn new(buffer_width: u32, buffer_height: u32, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<GameContext, String> {
+    fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<GameContext, String> {
         log("Creating GameContext...");
 
-        let flask_context = FlaskContext::new(buffer_width, buffer_height, palette)?;
+        let flask_context = FlaskContext::new(buffer_width, buffer_height, fullscreen, palette)?;
 
         let current_scene = starting_scene;
         let last_frame_time = FlaskContext::time_now();
@@ -60,8 +60,8 @@ impl GameContext {
     }
 
     // This func is mutable to ensure that this object is not used more than once when game is running
-    pub fn run(buffer_width: u32, buffer_height: u32, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<(), String> {
-        let mut game_context = GameContext::new(buffer_width, buffer_height, palette, starting_scene)?;
+    pub fn run(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<(), String> {
+        let mut game_context = GameContext::new(buffer_width, buffer_height, fullscreen, palette, starting_scene)?;
 
         log("Initialization successful. Running...");
 
@@ -82,36 +82,32 @@ impl GameContext {
 
     fn on_frame_update(&mut self) {
         let time_now = FlaskContext::time_now();
-        if time_now >= self.last_frame_time + GameContext::TICK_RATE {
-            let delta_time = time_now - self.last_frame_time;
-            self.last_frame_time = time_now;
+        let delta_time = std::cmp::max(time_now - self.last_frame_time, 0);
 
-            // Update scene
-            match self.current_scene.on_update(
-                    &mut self.game_status,
-                    self.flask_context.get_renderer_mut(),
-                    &Input::new(),
-                    delta_time as f64 / 1000.0
-            ) {
-                Some(scene) => {
-                    self.current_scene.on_destroy();
-                    self.current_scene = scene;
+        self.last_frame_time = time_now;
 
-                    let renderer = self.flask_context.get_renderer_mut();
+        // Update scene
+        if let Some(scene) = self.current_scene.on_update(
+                &mut self.game_status,
+                self.flask_context.get_renderer_mut(),
+                &Input::new(),
+                delta_time as f64 / 1000.0
+        ) {
+            self.current_scene.on_destroy();
+            self.current_scene = scene;
 
-                    // Reset renderer
-                    renderer.set_camera_x(0);
-                    renderer.set_camera_y(0);
-                    renderer.set_background_color(1).unwrap();
+            let renderer = self.flask_context.get_renderer_mut();
 
-                    self.current_scene.on_start(renderer);
-                }
-                _ => { }
-            };
+            // Reset renderer
+            renderer.set_camera_x(0);
+            renderer.set_camera_y(0);
+            renderer.set_background_color(1).unwrap();
 
-            self.flask_context.render_frame();
-            self.flask_context.clear_screen();
-        }
+            self.current_scene.on_start(renderer);
+        };
+
+        self.flask_context.render_frame();
+        self.flask_context.clear_screen();
     }
 
     fn request_animation_frame(f: &Closure<dyn FnMut()>) {
