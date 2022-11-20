@@ -17,102 +17,106 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use std::ffi::c_void;
+use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
-use gl;
+use crate::js_utils::js_uint_8_array;
 
 pub struct Texture {
-    texture_id: gl::types::GLuint,
-    width: gl::types::GLuint,
-    height: gl::types::GLuint,
+    gl_context: WebGl2RenderingContext,
+    texture: WebGlTexture,
+    texture_id: u32,
+    width: u32,
+    height: u32,
 }
 
 #[derive(Clone, Copy)]
 pub enum ImageMode {
-    RED = gl::RED as isize,
-    RGB = gl::RGB as isize,
-    RGBA = gl::RGBA as isize
+    RED = WebGl2RenderingContext::RED as isize,
+    RGB = WebGl2RenderingContext::RGB as isize,
+    RGBA = WebGl2RenderingContext::RGBA as isize
 }
 
 impl Texture {
-    pub fn from_data(data: &Vec<u8>, width: gl::types::GLuint, height: gl::types::GLuint, mode: ImageMode) -> Texture {
-        let texture_id: gl::types::GLuint = {
-            let mut texture_ids = vec![0];
-            unsafe {
-                gl::GenTextures(texture_ids.len() as gl::types::GLsizei, texture_ids.as_mut_ptr());
-            }
-            texture_ids[0]
+    pub fn from_data(gl_context: WebGl2RenderingContext, data: &Vec<u8>, width: u32, height: u32, mode: ImageMode, texture_id: u32) -> Texture {
+        let texture = gl_context.create_texture().unwrap();
+
+        gl_context.active_texture(texture_id);
+        gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&texture));
+        gl_context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_S, WebGl2RenderingContext::REPEAT as i32);
+        gl_context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_T, WebGl2RenderingContext::REPEAT as i32);
+        gl_context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_MIN_FILTER, WebGl2RenderingContext::NEAREST as i32);
+        gl_context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_MAG_FILTER, WebGl2RenderingContext::NEAREST as i32);
+
+        let internal_format = match mode {
+            ImageMode::RED => WebGl2RenderingContext::R8,
+            ImageMode::RGB => WebGl2RenderingContext::RGB,
+            ImageMode::RGBA => WebGl2RenderingContext::RGBA,
         };
 
-        unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, texture_id);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as gl::types::GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as gl::types::GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as gl::types::GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as gl::types::GLint);
-
-            let internal_format = match mode {
-                //ImageMode::RED => { 1 }
-                _ => { mode as gl::types::GLint }
-            };
-
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
+        let data_js_array = js_uint_8_array(data.as_slice());
+        gl_context.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
+                WebGl2RenderingContext::TEXTURE_2D,
                 0,
-                internal_format,
-                width as gl::types::GLint,
-                height as gl::types::GLint,
+                internal_format as i32,
+                width as i32,
+                height as i32,
                 0,
-                mode as gl::types::GLuint,
-                gl::UNSIGNED_BYTE,
-                data.as_ptr() as *const c_void
-            );
-        }
+                mode as u32,
+                WebGl2RenderingContext::UNSIGNED_BYTE,
+                &data_js_array,
+                0
+        ).unwrap();
 
-        Texture { texture_id, width, height }
+        gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
+
+        Texture { gl_context, texture, texture_id, width, height }
     }
 
-    pub fn texture_id(&self) -> gl::types::GLuint {
+    pub fn texture_id(&self) -> u32 {
         self.texture_id
     }
 
-    pub fn width(&self) -> gl::types::GLuint {
+    pub fn texture(&self) -> &WebGlTexture {
+        &self.texture
+    }
+
+    pub fn width(&self) -> u32 {
         self.width
     }
 
-    pub fn height(&self) -> gl::types::GLuint {
+    pub fn height(&self) -> u32 {
         self.height
     }
 
     pub fn update_texture_data(&self, data: &Vec<u8>, mode: ImageMode) {
-        unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, self.texture_id);
+        let internal_format = match mode {
+            ImageMode::RED => WebGl2RenderingContext::R8,
+            ImageMode::RGB => WebGl2RenderingContext::RGB,
+            ImageMode::RGBA => WebGl2RenderingContext::RGBA,
+        };
 
-            let internal_format = match mode {
-                //ImageMode::ColorIndex => { 1 }
-                _ => { mode as gl::types::GLint }
-            };
+        self.gl_context.active_texture(self.texture_id);
+        self.gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&self.texture));
+        let data_js_array = js_uint_8_array(data.as_slice());
+        self.gl_context.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_array_buffer_view_and_src_offset(
+                WebGl2RenderingContext::TEXTURE_2D,
+                0,
+                internal_format as i32,
+                self.width as i32,
+                self.height as i32,
+                0,
+                mode as u32,
+                WebGl2RenderingContext::UNSIGNED_BYTE,
+                &data_js_array,
+                0
+         ).unwrap();
 
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
-                0,
-                internal_format,
-                self.width as gl::types::GLint,
-                self.height as gl::types::GLint,
-                0,
-                mode as gl::types::GLuint,
-                gl::UNSIGNED_BYTE,
-                data.as_ptr() as *const c_void
-            );
-        }
+        self.gl_context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
     }
 }
 
 impl Drop for Texture {
     fn drop(&mut self) {
-        unsafe {
-            let temp_vec = vec![self.texture_id];
-            gl::DeleteTextures(temp_vec.len() as gl::types::GLsizei, temp_vec.as_ptr());
-        }
+        self.gl_context.delete_texture(Some(&self.texture))
     }
 }

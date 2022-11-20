@@ -17,6 +17,8 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
+use web_sys::WebGl2RenderingContext;
+
 use crate::frame_buffer::FrameBuffer;
 use crate::color::Color;
 use crate::sprite::Sprite;
@@ -24,6 +26,7 @@ use crate::font::Font;
 use crate::texture::{Texture, ImageMode};
 
 pub struct Renderer {
+    gl_context: WebGl2RenderingContext,
     frame_buffer: FrameBuffer,
     palette_texture: Texture,
     camera_x: i64,
@@ -34,13 +37,14 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(frame_buffer: FrameBuffer, palette: Vec<Color>) -> Result<Renderer, String> {
-        let palette_texture = Renderer::palette_texture_from_color_vec(&palette)?;
+    pub fn new(gl_context: WebGl2RenderingContext, frame_buffer: FrameBuffer, palette: Vec<Color>) -> Result<Renderer, String> {
+        let palette_texture = Renderer::palette_texture_from_color_vec(&gl_context, &palette)?;
 
         let camera_origin_x = frame_buffer.get_width() as i64 / 2;
         let camera_origin_y = frame_buffer.get_height() as i64 / 2;
 
         Ok(Renderer {
+            gl_context,
             frame_buffer,
             palette_texture,
             camera_x: 0,
@@ -51,7 +55,7 @@ impl Renderer {
         })
     }
 
-    fn palette_texture_from_color_vec(palette: &Vec<Color>) -> Result<Texture, String> {
+    fn palette_texture_from_color_vec(gl_context: &WebGl2RenderingContext, palette: &Vec<Color>) -> Result<Texture, String> {
         if palette.len() == 0 {
             return Err(String::from("Palette doesn't contain any colors"));
         }
@@ -70,7 +74,7 @@ impl Renderer {
             palette_texture_data.push(color.b);
         }
 
-        Ok(Texture::from_data(&palette_texture_data, palette.len() as u32, 1, ImageMode::RGB))
+        Ok(Texture::from_data(gl_context.clone(), &palette_texture_data, palette.len() as u32, 1, ImageMode::RGB, WebGl2RenderingContext::TEXTURE1))
     }
 
     pub fn clear_screen(&mut self) {
@@ -119,7 +123,7 @@ impl Renderer {
     }
 
     pub fn set_palette(&mut self, palette: &Vec<Color>) -> Result<(), String> {
-        self.palette_texture = Renderer::palette_texture_from_color_vec(palette)?;
+        self.palette_texture = Renderer::palette_texture_from_color_vec(&self.gl_context, palette)?;
         Ok(())
     }
 

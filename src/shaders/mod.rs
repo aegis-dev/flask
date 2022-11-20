@@ -17,210 +17,101 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use gl;
-use std;
-use std::ffi::{CStr, CString};
+use web_sys::{WebGl2RenderingContext, WebGlShader, WebGlProgram, WebGlUniformLocation};
+
 
 pub struct ShaderProgram {
-    id: gl::types::GLuint,
+    gl_context: WebGl2RenderingContext,
+    program: WebGlProgram,
 }
 
 impl ShaderProgram {
-    pub fn load_shaders(vert_shader_source: &CStr, frag_vert_source: &CStr) -> ShaderProgram {
-        let vert_shader = match Shader::from_vert_source(vert_shader_source) {
-            Ok(shader) => shader,
-            Err(error) => panic!("Failed to compile vertex shader: {:?}", error)
-        };
-        let frag_shader = match Shader::from_frag_source(frag_vert_source) {
-            Ok(shader) => shader,
-            Err(error) => panic!("Failed to compile fragment shader: {:?}", error)
-        };
-
-        match ShaderProgram::from_shaders(&[vert_shader, frag_shader]) {
-            Ok(shader_program) => shader_program,
-            Err(error) => panic!("Failed to compile shader program: {:?}", error)
-        }
-    }
-
-    pub fn id(&self) -> gl::types::GLuint {
-        self.id
+    pub fn load_shaders(gl_context: WebGl2RenderingContext, vert_shader_source: &String, frag_vert_source: &String) -> Result<ShaderProgram, String> {
+        let vert_shader = Shader::from_vert_source(&gl_context, vert_shader_source)?;
+        let frag_shader = Shader::from_frag_source(&gl_context, frag_vert_source)?;
+        let program = ShaderProgram::link_program(&gl_context, &vert_shader, &frag_shader)?;
+        Ok(ShaderProgram { gl_context, program })
     }
 
     pub fn enable(&self) {
-        unsafe {
-            gl::UseProgram(self.id);
-        }
+        self.gl_context.use_program(Some(&self.program));
     }
 
     pub fn disable(&self) {
-        unsafe {
-            gl::UseProgram(0);
-        }
+        self.gl_context.use_program(None);
     }
 
-    pub fn set_uniform_int(&self, location: i32, value: i32) {
-        unsafe {
-            gl::Uniform1i(location, value);
-        }
+    pub fn get_uniform_location(&self, uniform_name: &str) -> Option<WebGlUniformLocation> {
+        self.gl_context.get_uniform_location(&self.program, uniform_name)
     }
 
-    fn from_shaders(shaders: &[Shader]) -> Result<ShaderProgram, String> {
-        let program_id = unsafe { gl::CreateProgram() };
+    pub fn set_uniform_int(&self, location: &WebGlUniformLocation, value: i32) {
+        self.gl_context.uniform1i(Some(location), value);
+    }
 
-        for shader in shaders {
-            unsafe {
-                gl::AttachShader(program_id, shader.id());
-            }
+    fn link_program(
+            gl_context: &WebGl2RenderingContext,
+            vert_shader: &Shader,
+            frag_shader: &Shader,
+    ) -> Result<WebGlProgram, String> {
+        let program = gl_context.create_program().ok_or_else(|| String::from("Unable to create shader object"))?;
+
+        gl_context.attach_shader(&program, vert_shader.get_shader());
+        gl_context.attach_shader(&program, frag_shader.get_shader());
+        gl_context.link_program(&program);
+
+        if gl_context.get_program_parameter(&program, WebGl2RenderingContext::LINK_STATUS).as_bool().unwrap_or(false) {
+            Ok(program)
+        } else {
+            Err(gl_context.get_program_info_log(&program).unwrap_or_else(|| String::from("Unknown error creating program object")))
         }
-
-        unsafe {
-            gl::LinkProgram(program_id);
-        }
-
-        let mut success: gl::types::GLint = 1;
-        unsafe {
-            gl::GetProgramiv(program_id, gl::LINK_STATUS, &mut success);
-        }
-
-        if success == 0 {
-            let mut len: gl::types::GLint = 0;
-            unsafe {
-                gl::GetProgramiv(program_id, gl::INFO_LOG_LENGTH, &mut len);
-            }
-
-            let error = allocate_buffer_for_gl_message(len as usize);
-
-            unsafe {
-                gl::GetProgramInfoLog(
-                    program_id,
-                    len,
-                    std::ptr::null_mut(),
-                    error.as_ptr() as *mut gl::types::GLchar,
-                );
-            }
-
-            return Err(error.to_string_lossy().into_owned());
-        }
-
-        unsafe {
-            gl::ValidateProgram(program_id);
-        }
-
-        success = 1;
-        unsafe {
-            gl::GetProgramiv(program_id, gl::VALIDATE_STATUS, &mut success);
-        }
-
-        if success == 0 {
-            let mut len: gl::types::GLint = 0;
-            unsafe {
-                gl::GetProgramiv(program_id, gl::INFO_LOG_LENGTH, &mut len);
-            }
-
-            let error = allocate_buffer_for_gl_message(len as usize);
-
-            unsafe {
-                gl::GetProgramInfoLog(
-                    program_id,
-                    len,
-                    std::ptr::null_mut(),
-                    error.as_ptr() as *mut gl::types::GLchar,
-                );
-            }
-
-            return Err(error.to_string_lossy().into_owned());
-        }
-
-
-        for shader in shaders {
-            unsafe {
-                gl::DetachShader(program_id, shader.id());
-            }
-        }
-
-        Ok(ShaderProgram { id: program_id })
     }
 }
 
 impl Drop for ShaderProgram {
     fn drop(&mut self) {
-        unsafe {
-            gl::DeleteProgram(self.id);
-        }
+        self.gl_context.delete_program(Some(&self.program))
     }
 }
 
 struct Shader {
-    id: gl::types::GLuint,
+    gl_context: WebGl2RenderingContext,
+    shader: WebGlShader,
 }
 
 impl Shader {
-    pub fn from_vert_source(source: &CStr) -> Result<Shader, String> {
-        Shader::from_source(source, gl::VERTEX_SHADER)
+    pub fn get_shader(&self) -> &WebGlShader {
+        &self.shader
     }
 
-    pub fn from_frag_source(source: &CStr) -> Result<Shader, String> {
-        Shader::from_source(source, gl::FRAGMENT_SHADER)
+    pub fn from_vert_source(gl_context: &WebGl2RenderingContext, source: &String) -> Result<Shader, String> {
+        Shader::from_source(gl_context, source, WebGl2RenderingContext::VERTEX_SHADER)
     }
 
-    pub fn id(&self) -> gl::types::GLuint {
-        self.id
+    pub fn from_frag_source(gl_context: &WebGl2RenderingContext, source: &String) -> Result<Shader, String> {
+        Shader::from_source(gl_context, source, WebGl2RenderingContext::FRAGMENT_SHADER)
     }
 
-    fn from_source(source: &CStr, kind: gl::types::GLenum) -> Result<Shader, String> {
-        let id = Shader::shader_from_source(source, kind)?;
-        Ok(Shader { id })
+    fn from_source(gl_context: &WebGl2RenderingContext, source: &String, kind: u32) -> Result<Shader, String> {
+        let shader = Shader::compile_shader(gl_context, source, kind)?;
+        Ok(Shader { gl_context: gl_context.clone(), shader })
     }
 
-    fn shader_from_source(source: &CStr, kind: gl::types::GLenum) -> Result<gl::types::GLuint, String> {
-        let id = unsafe { gl::CreateShader(kind) };
-        unsafe {
-            gl::ShaderSource(id, 1, &source.as_ptr(), std::ptr::null());
-            gl::CompileShader(id);
+    pub fn compile_shader(gl_context: &WebGl2RenderingContext,  source: &String, shader_type: u32) -> Result<WebGlShader, String> {
+        let shader = gl_context.create_shader(shader_type).ok_or_else(|| String::from("Unable to create shader object"))?;
+        gl_context.shader_source(&shader, source.as_str());
+        gl_context.compile_shader(&shader);
+
+        if gl_context.get_shader_parameter(&shader, WebGl2RenderingContext::COMPILE_STATUS).as_bool().unwrap_or(false) {
+            Ok(shader)
+        } else {
+            Err(gl_context.get_shader_info_log(&shader).unwrap_or_else(|| String::from("Unknown error creating shader")))
         }
-
-        let mut success: gl::types::GLint = 1;
-        unsafe {
-            gl::GetShaderiv(id, gl::COMPILE_STATUS, &mut success);
-        }
-
-        if success == 0 {
-            let mut len: gl::types::GLint = 0;
-            unsafe {
-                gl::GetShaderiv(id, gl::INFO_LOG_LENGTH, &mut len);
-            }
-
-            let error = allocate_buffer_for_gl_message(len as usize);
-
-            unsafe {
-                gl::GetShaderInfoLog(
-                    id,
-                    len,
-                    std::ptr::null_mut(),
-                    error.as_ptr() as *mut gl::types::GLchar,
-                );
-            }
-
-            return Err(error.to_string_lossy().into_owned());
-        }
-
-        Ok(id)
     }
 }
 
 impl Drop for Shader {
     fn drop(&mut self) {
-        unsafe {
-            gl::DeleteShader(self.id);
-        }
+        self.gl_context.delete_shader(Some(&self.shader))
     }
-}
-
-fn allocate_buffer_for_gl_message(len: usize) -> CString {
-    // allocate buffer of correct size
-    let mut buffer: Vec<u8> = Vec::with_capacity(len + 1);
-    // fill it with len spaces
-    buffer.extend([b' '].iter().cycle().take(len));
-    // convert buffer to CString
-    unsafe { CString::from_vec_unchecked(buffer) }
 }

@@ -40,10 +40,8 @@ impl BoxCollider {
     }
 
     pub fn is_point_in_box(&self, point_x: i64, point_y: i64) -> bool {
-        (
-            point_x >= self.position_x &&
-            point_x <= self.position_x + self.width &&
-            point_y >= self.position_y && point_y <= self.position_y + self.height
-        )
+        point_x >= self.position_x &&
+        point_x <= self.position_x + self.width &&
+        point_y >= self.position_y && point_y <= self.position_y + self.height
     }
 }

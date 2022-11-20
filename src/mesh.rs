@@ -17,103 +17,78 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use std::mem;
-use std::ffi::c_void;
-use std::ptr::null;
 
-use gl;
+use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject, WebGlBuffer};
+
+use crate::js_utils::{js_float_32_array, js_uint_32_array};
+
 
 pub struct Mesh {
-    vao_id: gl::types::GLuint,
-    vbo_ids: Vec<gl::types::GLuint>,
-    vertices_count: gl::types::GLsizei,
-    indices_count: gl::types::GLsizei,
+    gl_context: WebGl2RenderingContext,
+    vao: WebGlVertexArrayObject,
+    vbos: Vec<WebGlBuffer>,
+    vertices_count: i32,
+    indices_count: i32,
 }
 
 impl Mesh {
-    pub fn from_data(vertices: &Vec<gl::types::GLfloat>, texture_coord: &Vec<gl::types::GLfloat>, indices: &Vec<gl::types::GLuint>) -> Mesh {
-        let vao_id = {
-            let mut vao_ids = vec![0];
-            unsafe {
-                gl::GenVertexArrays(vao_ids.len() as gl::types::GLsizei, vao_ids.as_mut_ptr());
-            }
-            vao_ids[0]
-        };
+    pub fn from_data(gl_context: WebGl2RenderingContext, vertices: &Vec<f32>, texture_coord: &Vec<f32>, indices: &Vec<u32>) -> Mesh {
+        let vao = gl_context.create_vertex_array().unwrap();
+        gl_context.bind_vertex_array(Some(&vao));
 
-        unsafe {
-            gl::BindVertexArray(vao_id);
-        }
+        let mut vbos: Vec<WebGlBuffer> = vec![];
+        vbos.push(Mesh::bind_indices_buffer(&gl_context, indices));
+        vbos.push(Mesh::store_data_in_attribute_list(&gl_context, 0, 3, vertices));
+        vbos.push(Mesh::store_data_in_attribute_list(&gl_context, 1, 2, texture_coord));
 
-        let mut vbo_ids: Vec<gl::types::GLuint> = vec![];
-        vbo_ids.push(Mesh::bind_indices_buffer(indices));
-        vbo_ids.push(Mesh::store_data_in_attribute_list(0, 3, vertices));
-        vbo_ids.push(Mesh::store_data_in_attribute_list(1, 2, texture_coord));
+        gl_context.bind_vertex_array(None);
 
-
-        unsafe {
-            gl::BindVertexArray(0);
-        }
-
-        let vertices_count = vertices.len() as gl::types::GLsizei;
-        let indices_count = indices.len() as gl::types::GLsizei;
-        Mesh { vao_id, vbo_ids, vertices_count, indices_count }
+        let vertices_count = vertices.len() as i32;
+        let indices_count = indices.len() as i32;
+        Mesh { gl_context, vao, vbos, vertices_count, indices_count }
     }
 
-    fn bind_indices_buffer(indices: &Vec<gl::types::GLuint>) -> gl::types::GLuint {
-        let vbo_id = {
-            let mut vbo_ids = vec![0];
-            unsafe {
-                gl::GenBuffers(vbo_ids.len() as gl::types::GLsizei, vbo_ids.as_mut_ptr());
-            }
-            vbo_ids[0]
-        };
+    fn bind_indices_buffer(gl_context: &WebGl2RenderingContext, indices: &Vec<u32>) -> WebGlBuffer {
+        let vbo = gl_context.create_buffer().unwrap();
 
-        unsafe {
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, vbo_id);
-            gl::BufferData(gl::ELEMENT_ARRAY_BUFFER, (mem::size_of::<gl::types::GLuint>() * indices.len()) as isize, indices.as_ptr() as *const c_void, gl::STATIC_DRAW);
-        }
+        let indices_js_array = js_uint_32_array(indices.as_slice());
+        gl_context.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(&vbo));
+        gl_context.buffer_data_with_array_buffer_view(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, &indices_js_array, WebGl2RenderingContext::STATIC_DRAW);
+        gl_context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, None);
 
-        vbo_id
+        vbo
     }
 
-    fn store_data_in_attribute_list(attribute_id: gl::types::GLuint, attribute_size: gl::types::GLint, data: &Vec<gl::types::GLfloat>) -> gl::types::GLuint {
-        let vbo_id = {
-            let mut vbo_ids = vec![0];
-            unsafe {
-                gl::GenBuffers(vbo_ids.len() as gl::types::GLsizei, vbo_ids.as_mut_ptr());
-            }
-            vbo_ids[0]
-        };
+    fn store_data_in_attribute_list(gl_context: &WebGl2RenderingContext, attribute_id: u32, attribute_size: i32, data: &Vec<f32>) -> WebGlBuffer {
+        let vbo = gl_context.create_buffer().unwrap();
 
-        unsafe {
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo_id);
-            gl::BufferData(gl::ARRAY_BUFFER, (mem::size_of::<gl::types::GLfloat>() * data.len()) as isize, data.as_ptr() as *const c_void, gl::STATIC_DRAW);
-            gl::VertexAttribPointer(attribute_id, attribute_size, gl::FLOAT, gl::FALSE, 0, null());
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-        }
+        let data_js_array = js_float_32_array(data.as_slice());
+        gl_context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&vbo));
+        gl_context.buffer_data_with_array_buffer_view(WebGl2RenderingContext::ARRAY_BUFFER, &data_js_array, WebGl2RenderingContext::STATIC_DRAW);
+        gl_context.vertex_attrib_pointer_with_i32(attribute_id, attribute_size, WebGl2RenderingContext::FLOAT, false, 0, 0);
+        gl_context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, None);
 
-        vbo_id
+        vbo
     }
 
-    pub fn vao_id(&self) -> gl::types::GLuint {
-        self.vao_id
+    pub fn vao(&self) -> &WebGlVertexArrayObject {
+        &self.vao
     }
 
-    pub fn vertices_count(&self) -> gl::types::GLsizei {
+    pub fn vertices_count(&self) -> i32 {
         self.vertices_count
     }
 
-    pub fn indices_count(&self) -> gl::types::GLsizei {
+    pub fn indices_count(&self) -> i32 {
         self.indices_count
     }
 }
 
 impl Drop for Mesh {
     fn drop(&mut self) {
-        unsafe {
-            gl::DeleteBuffers(self.vbo_ids.len() as gl::types::GLsizei, self.vbo_ids.as_ptr());
-            let temp_vec = vec![self.vao_id];
-            gl::DeleteVertexArrays(temp_vec.len() as gl::types::GLsizei, temp_vec.as_ptr());
+        for vbo in &self.vbos {
+            self.gl_context.delete_buffer(Some(&vbo));
         }
+        self.gl_context.delete_vertex_array(Some(&self.vao));
     }
 }
