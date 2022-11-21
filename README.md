@@ -1,5 +1,5 @@
 # Flask
-Simple framework for 2D game development written in pure Rust. Heavily inspired by Pico-8
+Simple framework for 2D WebGL game development written in pure Rust. Heavily inspired by Pico-8
 
 ![Alt Text](gameplay.gif)
 
