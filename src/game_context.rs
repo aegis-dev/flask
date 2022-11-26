@@ -107,7 +107,6 @@ impl GameContext {
         };
 
         self.flask_context.render_frame();
-        self.flask_context.clear_screen();
     }
 
     fn request_animation_frame(f: &Closure<dyn FnMut()>) {

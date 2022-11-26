@@ -152,10 +152,6 @@ impl FlaskContext {
         &mut self.renderer
     }
 
-    pub fn clear_screen(&mut self) {
-        self.renderer.clear_screen();
-    }
-
     pub fn render_frame(&mut self) {
         let frame_buffer = self.renderer.get_frame_buffer();
         self.render_frame_buffer(&frame_buffer)
