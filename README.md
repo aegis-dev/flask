@@ -1,10 +1,13 @@
 # Flask
-Simple framework for 2D game development written in pure Rust. Heavily inspired by Pico-8
+Simple framework for 2D WebGL game development written in pure Rust. Heavily inspired by Pico-8
 
 ![Alt Text](gameplay.gif)
 
 ## Example game
-[Sky Combat](https://github.com/aegis-dev/sky_combat) is an example game which aims to demonstrate capabilities and usage of the Flask game framework.
+[Sky Combat](https://github.com/aegis-dev/sky_combat) is an example game which aims to demonstrate capabilities of the Flask game framework
+
+## Game project template
+https://github.com/aegis-dev/flask_project_template
 
 ## Prerequisites
 Install wasm-pack
@@ -14,6 +17,9 @@ https://rustwasm.github.io/wasm-pack/installer/
 ```
 wasm-pack build --target web
 ```
+
+## Documentation
+Coming soon
 
 ## License
 Flask is free software: you can redistribute it and/or modify
