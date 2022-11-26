@@ -38,8 +38,20 @@ impl Rand {
         z ^ (z >> 31)
     }
 
+    pub fn next_bool(&mut self) -> bool {
+        self.next_i64_in_range(-2, 2) > 0
+    }
+
+    pub fn next_u32(&mut self) -> u32 {
+        self.next_u64() as u32
+    }
+
+    pub fn next_f32(&mut self) -> f32 {
+        self.next_u32() as f32 / u32::MAX as f32
+    }
+
     pub fn next_f64(&mut self) -> f64 {
-        (self.next_u64() / u64::MAX) as f64
+        self.next_u32() as f64 / u32::MAX as f64
     }
 
     pub fn next_i64_in_range(&mut self, min: i64, max: i64) -> i64 {
