@@ -17,33 +17,32 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-#![allow(dead_code)]
+pub struct Rand {
+    state: u64,
+}
 
-extern crate lazy_static;
-extern crate js_sys;
-extern crate wasm_bindgen;
-extern crate web_sys;
+impl Rand {
+    pub fn new() -> Rand {
+        Rand { state: 0 }
+    }
 
-mod shaders;
-mod mesh;
-mod texture;
-mod gl_renderer;
-mod byte_buffer_reader;
-mod js_utils;
-pub mod game_context;
-pub mod game_status;
-pub mod scene;
-pub mod frame_buffer;
-pub mod color;
-pub mod input;
-pub mod renderer;
-pub mod sprite;
-pub mod font;
-pub mod palette;
-pub mod flask_context;
-pub mod colliders;
-pub mod rand;
+    pub fn new_with_seed(seed: u64) -> Rand {
+        Rand { state: seed }
+    }
 
-pub fn log(message: &str) {
-    crate::js_utils::js_log(format!("[flask] {}", message).as_str());
+    pub fn next_u64(&mut self) -> u64 {
+        self.state += 0x9E3779B97F4A7C15;
+        let mut z: u64 = self.state;
+        z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9;
+        z = (z ^ (z >> 27)) * 0x94D049BB133111EB;
+        z ^ (z >> 31)
+    }
+
+    pub fn next_f64(&mut self) -> f64 {
+        (self.next_u64() / u64::MAX) as f64
+    }
+
+    pub fn next_i64_in_range(&mut self, min: i64, max: i64) -> i64 {
+        (self.next_f64() * (max - min) as f64) as i64 + min
+    }
 }
