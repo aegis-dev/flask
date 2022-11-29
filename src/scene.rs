@@ -19,13 +19,12 @@
 
 use crate::input::Input;
 use crate::renderer::Renderer;
-use crate::game_status::GameStatus;
 
 pub trait Scene {
     // It is useful to pass renderer on_start to do basic setup such as background color or set palette
     fn on_start(&mut self, renderer: &mut Renderer);
 
-    fn on_update(&mut self, game_status: &mut GameStatus, renderer: &mut Renderer, input: &Input, delta_time: f64) -> Option<Box<dyn Scene>>;
+    fn on_update(&mut self, renderer: &mut Renderer, input: &Input, delta_time: f64) -> Option<Box<dyn Scene>>;
 
     fn on_destroy(&mut self);
 }

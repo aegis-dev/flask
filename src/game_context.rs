@@ -26,7 +26,6 @@ use wasm_bindgen::prelude::Closure;
 use crate::input::Input;
 use crate::scene::Scene;
 use crate::color::Color;
-use crate::game_status::GameStatus;
 use crate::flask_context::FlaskContext;
 use crate::log;
 
@@ -34,7 +33,6 @@ pub struct GameContext {
     flask_context: FlaskContext,
     current_scene: Box<dyn Scene>,
     last_frame_time: i128,
-    game_status: GameStatus,
 }
 
 impl GameContext {
@@ -47,7 +45,6 @@ impl GameContext {
 
         let current_scene = starting_scene;
         let last_frame_time = FlaskContext::time_now();
-        let game_status = GameStatus::new();
 
         log("GameContext created");
 
@@ -55,7 +52,6 @@ impl GameContext {
             flask_context,
             current_scene,
             last_frame_time,
-            game_status
         })
     }
 
@@ -88,7 +84,6 @@ impl GameContext {
 
         // Update scene
         if let Some(scene) = self.current_scene.on_update(
-                &mut self.game_status,
                 self.flask_context.get_renderer_mut(),
                 &Input::new(),
                 delta_time as f64 / 1000.0

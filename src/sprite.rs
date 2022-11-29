@@ -17,10 +17,10 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
+use std::collections::HashMap;
 use png::{ColorType, Transformations};
 
 use crate::byte_buffer_reader::ByteBufferReader;
-use std::collections::HashMap;
 
 pub struct Sprite {
     width: u32,
@@ -76,6 +76,10 @@ impl Sprite {
         }
     }
 
+    pub fn from_pixels(width: u32, height: u32, pixels: Vec<Vec<u8>>) -> Sprite {
+        Sprite { width, height, pixels }
+    }
+
     pub fn get_width(&self) -> u32 {
         self.width
     }
@@ -120,5 +124,53 @@ impl SpriteBank {
 
     pub fn get_sprite(&self, sprite_id: &SpriteID) -> Option<&Sprite> {
         self.sprites_map.get(sprite_id)
+    }
+}
+
+pub struct TileSet {
+    tileset: Vec<Sprite>,
+}
+
+impl TileSet {
+    pub fn from_indexed_8bit_png(png_bytes: &[u8], tile_width: u32, tile_height: u32) -> Result<TileSet, String> {
+        let sprite = Sprite::from_indexed_8bit_png(png_bytes)?;
+
+        if sprite.get_width() % tile_width != 0 {
+            return Err(String::from(format!("Tileset width is not multiple of {}", tile_width)));
+        }
+        if sprite.get_height() % tile_height != 0 {
+            return Err(String::from(format!("Tileset height is not multiple of {}", tile_height)));
+        }
+
+        let columns = sprite.get_width() / tile_width;
+        let rows = sprite.get_height() / tile_height;
+
+        let mut tileset = vec![];
+
+        for row in 0..rows {
+            for column in 0..columns {
+                let tile_x_offset = column * tile_width;
+                let tile_y_offset = row * tile_height;
+
+                let mut tile_pixels = vec![vec![0; tile_height as usize]; tile_width as usize];
+
+                for y in 0..tile_height as usize {
+                    for x in 0..tile_width as usize {
+                        *tile_pixels.get_mut(x).unwrap().get_mut(y).unwrap() = *sprite.pixels.get(tile_x_offset as usize + x).unwrap().get(tile_y_offset as usize + y).unwrap();
+                    }
+                }
+                tileset.push(Sprite::from_pixels(tile_width, tile_height, tile_pixels))
+            }
+        }
+
+        Ok(TileSet { tileset })
+    }
+
+    pub fn get_tile_at_index(&self, index: u32) -> Result<&Sprite, String> {
+        if index as usize >= self.tileset.len() {
+            return Err(String::from("Tile index out of bounds"));
+        }
+
+        return Ok(self.tileset.get(index as usize).unwrap())
     }
 }

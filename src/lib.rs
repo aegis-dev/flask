@@ -31,7 +31,6 @@ mod gl_renderer;
 mod byte_buffer_reader;
 mod js_utils;
 pub mod game_context;
-pub mod game_status;
 pub mod scene;
 pub mod frame_buffer;
 pub mod color;
