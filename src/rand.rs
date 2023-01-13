@@ -54,6 +54,7 @@ impl Rand {
         self.next_u32() as f64 / u32::MAX as f64
     }
 
+    // Min inclusive and max exclusive
     pub fn next_i64_in_range(&mut self, min: i64, max: i64) -> i64 {
         (self.next_f64() * (max - min) as f64) as i64 + min
     }

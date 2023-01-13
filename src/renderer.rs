@@ -97,6 +97,14 @@ impl Renderer {
         (self.camera_x, self.camera_y)
     }
 
+    pub fn get_camera_x(&self) -> i64  {
+        self.camera_x
+    }
+
+    pub fn get_camera_y(&self) -> i64  {
+        self.camera_y
+    }
+
     pub fn set_camera_x(&mut self, x: i64) {
         self.camera_x = x;
     }
@@ -331,7 +339,7 @@ impl Renderer {
                     continue;
                 }
                 if flip {
-                    self.point(x + (sprite_width - sprite_x) as i64, y + sprite_y as i64, color_idx);
+                    self.point(x + (sprite_width - 1 - sprite_x) as i64, y + sprite_y as i64, color_idx);
                 } else {
                     self.point(x + sprite_x as i64, y + sprite_y as i64, color_idx);
                 }
