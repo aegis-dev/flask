@@ -1,5 +1,5 @@
 //
-// Copyright © 2020-2022  Egidijus Lileika
+// Copyright © 2020-2023  Egidijus Lileika
 //
 // This file is part of Flask - Framework for 2D game development
 //
@@ -146,6 +146,10 @@ impl FlaskContext {
 
     pub fn get_canvas(&self) -> HtmlCanvasElement {
         self.canvas.clone()
+    }
+
+    pub fn get_gl_context(&self) -> web_sys::WebGl2RenderingContext {
+        self.gl_context.clone()
     }
 
     pub fn get_renderer_mut(&mut self) -> &mut Renderer {

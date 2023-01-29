@@ -1,5 +1,5 @@
 //
-// Copyright © 2020-2022  Egidijus Lileika
+// Copyright © 2020-2023  Egidijus Lileika
 //
 // This file is part of Flask - Framework for 2D game development
 //
