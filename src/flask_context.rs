@@ -53,9 +53,9 @@ impl FlaskContext {
             return Err(String::from("\'buffer_width\' must be 4 byte aligned"));
         }
 
-        if  buffer_width < buffer_height {
-            return Err(String::from("\'buffer_width\' can't be smaller than \'buffer_height\'"));
-        }
+//        if  buffer_width < buffer_height {
+//            return Err(String::from("\'buffer_width\' can't be smaller than \'buffer_height\'"));
+//        }
 
         log("Resolving canvas...");
 
@@ -71,9 +71,8 @@ impl FlaskContext {
         let display_width = canvas.width();
         let display_height = canvas.height();
 
-        let modifier = display_height / buffer_height;
-        let viewport_width = (buffer_width * modifier) as i32;
-        let viewport_height = display_height as i32;
+        let viewport_width = (buffer_width * (display_width / buffer_width)) as i32;
+        let viewport_height = (buffer_height * (display_height / buffer_height)) as i32;
 
         log("Setting viewport...");
 

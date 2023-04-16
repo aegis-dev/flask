@@ -147,7 +147,7 @@ impl TileSet {
 
         let mut tileset = vec![];
 
-        for row in 0..rows {
+        for row in (0..rows).rev() {
             for column in 0..columns {
                 let tile_x_offset = column * tile_width;
                 let tile_y_offset = row * tile_height;
