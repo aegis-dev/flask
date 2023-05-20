@@ -36,12 +36,14 @@ pub mod frame_buffer;
 pub mod color;
 pub mod input;
 pub mod renderer;
+pub mod brightness;
 pub mod sprite;
 pub mod font;
 pub mod palette;
 pub mod flask_context;
 pub mod colliders;
 pub mod rand;
+pub mod lights;
 
 pub fn log(message: &str) {
     crate::js_utils::js_log(format!("[flask] {}", message).as_str());

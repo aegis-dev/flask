@@ -20,12 +20,12 @@
 use std::collections::HashMap;
 use png::{ColorType, Transformations};
 
-use crate::byte_buffer_reader::ByteBufferReader;
+use crate::{byte_buffer_reader::ByteBufferReader, palette::FlaskColor};
 
 pub struct Sprite {
     width: u32,
     height: u32,
-    pixels: Vec<Vec<u8>>,
+    pixels: Vec<Vec<FlaskColor>>,
 }
 
 impl Sprite {
@@ -58,12 +58,12 @@ impl Sprite {
                     );
                 }
 
-                let mut pixels = vec![vec![0; height as usize]; width as usize];
+                let mut pixels: Vec<Vec<FlaskColor>> = vec![vec![FlaskColor::None; height as usize]; width as usize];
 
                 let mut pixel_idx = 0;
                 for y in 0..height as usize {
                     for x in 0..width as usize {
-                        *pixels.get_mut(x).unwrap().get_mut(height - 1 - y).unwrap() = *image_data.get(pixel_idx).unwrap();
+                        *pixels.get_mut(x).unwrap().get_mut(height - 1 - y).unwrap() = FlaskColor::try_from(*image_data.get(pixel_idx).unwrap()).unwrap();
                         pixel_idx += 1;
                     }
                 }
@@ -76,7 +76,7 @@ impl Sprite {
         }
     }
 
-    pub fn from_pixels(width: u32, height: u32, pixels: Vec<Vec<u8>>) -> Sprite {
+    pub fn from_pixels(width: u32, height: u32, pixels: Vec<Vec<FlaskColor>>) -> Sprite {
         Sprite { width, height, pixels }
     }
 
@@ -88,9 +88,9 @@ impl Sprite {
         self.height
     }
 
-    pub fn get_color_index_at(&self, x: u32, y: u32) -> u8 {
+    pub fn get_color_index_at(&self, x: u32, y: u32) -> FlaskColor {
         if x >= self.width || y >= self.height {
-            return 0;
+            return FlaskColor::None;
         }
         *self.pixels.get(x as usize).unwrap().get(y as usize).unwrap()
     }
@@ -152,11 +152,11 @@ impl TileSet {
                 let tile_x_offset = column * tile_width;
                 let tile_y_offset = row * tile_height;
 
-                let mut tile_pixels = vec![vec![0; tile_height as usize]; tile_width as usize];
+                let mut tile_pixels = vec![vec![FlaskColor::None; tile_height as usize]; tile_width as usize];
 
                 for y in 0..tile_height as usize {
                     for x in 0..tile_width as usize {
-                        *tile_pixels.get_mut(x).unwrap().get_mut(y).unwrap() = *sprite.pixels.get(tile_x_offset as usize + x).unwrap().get(tile_y_offset as usize + y).unwrap();
+                        *tile_pixels.get_mut(x).unwrap().get_mut(y).unwrap() = FlaskColor::try_from(*sprite.pixels.get(tile_x_offset as usize + x).unwrap().get(tile_y_offset as usize + y).unwrap()).unwrap();
                     }
                 }
                 tileset.push(Sprite::from_pixels(tile_width, tile_height, tile_pixels))

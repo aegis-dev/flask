@@ -27,10 +27,9 @@ use web_sys::{
 use crate::gl_renderer::GlRenderer;
 use crate::input::init_input_handlers;
 use crate::shaders::ShaderProgram;
-use crate::color::Color;
 use crate::renderer::Renderer;
 use crate::frame_buffer::FrameBuffer;
-use crate::log;
+use crate::{log, palette};
 
 
 pub struct FlaskContext {
@@ -46,7 +45,7 @@ pub struct FlaskContext {
 }
 
 impl FlaskContext {
-    pub fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: Vec<Color>) -> Result<FlaskContext, String> {
+    pub fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool) -> Result<FlaskContext, String> {
         log("Creating FlaskContext...");
 
         if buffer_width % 4 != 0 {
@@ -109,6 +108,10 @@ impl FlaskContext {
         gl_renderer.set_uniform_int(&uniform_texture_sampler_location, 0);
         gl_renderer.set_uniform_int(&uniform_palette_sampler_location, 1);
         gl_renderer.end_rendering();
+        
+        log("Loading palette...");
+        
+        let palette = palette::flask_default();
 
         log("Creating Renderer...");
 

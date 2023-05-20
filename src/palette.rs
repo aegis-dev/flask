@@ -20,16 +20,17 @@
 use std::fs::File;
 use std::io::Read;
 
-use num_derive::FromPrimitive;
+use num_enum::TryFromPrimitive;
 
 use crate::color::Color;
 use crate::byte_buffer_reader::ByteBufferReader;
 
 
-#[derive(Copy, Clone, Eq, PartialEq, FromPrimitive, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, TryFromPrimitive, Hash)]
 #[repr(u8)]
 pub enum FlaskColor {
-    Purple = 1,
+    None = 0,
+    Purple,
     Green,
     Brown,
     Red,
@@ -39,19 +40,65 @@ pub enum FlaskColor {
     White
 }
 
+impl FlaskColor {
+    #[inline(always)]
+    pub fn count() -> u8 {
+        FlaskColor::White as u8
+    }
+}
+
 // https://lospec.com/palette-list/retrocal-8
 // Sorter variant https://coolors.co/2f142f-2a584f-774448-c6505a-74a33f-6eb8a8-ee9c5d-fcffc0
 pub fn flask_default() -> Vec<Color> {
     let mut palette = vec![];
+    
+    let mut main_clors = vec![];
+    main_clors.push(Color::from_hex(0x2f142f));
+    main_clors.push(Color::from_hex(0x2a584f));
+    main_clors.push(Color::from_hex(0x774448));
+    main_clors.push(Color::from_hex(0xc6505a));
+    main_clors.push(Color::from_hex(0x74a33f));
+    main_clors.push(Color::from_hex(0x6eb8a8));
+    main_clors.push(Color::from_hex(0xee9c5d));
+    main_clors.push(Color::from_hex(0xfcffc0));
+    
+    // Normal colors
+    for color in &main_clors {
+        palette.push(color.clone());
+    }
+    
+    // Dim colors
+    for color in &main_clors {
+        let dim_color = Color::new(
+            (color.r as f32 * 0.7) as u8,
+            (color.g as f32 * 0.7) as u8,
+            (color.b as f32 * 0.7) as u8
+        );
+        
+        palette.push(dim_color);
+    }
+    
+    // Dark colors
+    for color in &main_clors {
+        let dim_color = Color::new(
+            (color.r as f32 * 0.2) as u8,
+            (color.g as f32 * 0.2) as u8,
+            (color.b as f32 * 0.2) as u8
+        );
 
-    palette.push(Color::from_hex(0x2f142f));
-    palette.push(Color::from_hex(0x2a584f));
-    palette.push(Color::from_hex(0x774448));
-    palette.push(Color::from_hex(0xc6505a));
-    palette.push(Color::from_hex(0x74a33f));
-    palette.push(Color::from_hex(0x6eb8a8));
-    palette.push(Color::from_hex(0xee9c5d));
-    palette.push(Color::from_hex(0xfcffc0));
+        palette.push(dim_color);
+    }
+    
+    // Black colors
+    for color in &main_clors {
+        let dim_color = Color::new(
+            (color.r as f32 * 0.1) as u8,
+            (color.g as f32 * 0.1) as u8,
+            (color.b as f32 * 0.1) as u8
+        );
+
+        palette.push(dim_color);
+    }
 
     palette
 }

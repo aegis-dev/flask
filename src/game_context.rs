@@ -24,8 +24,8 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::Closure;
 
 use crate::input::Input;
+use crate::palette::FlaskColor;
 use crate::scene::Scene;
-use crate::color::Color;
 use crate::flask_context::FlaskContext;
 use crate::log;
 
@@ -38,10 +38,10 @@ pub struct GameContext {
 impl GameContext {
     const TICK_RATE: u128 = (1.0f64 / 60.0f64 * 1000.0f64) as u128;
 
-    fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<GameContext, String> {
+    fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool, starting_scene: Box<dyn Scene>) -> Result<GameContext, String> {
         log("Creating GameContext...");
 
-        let flask_context = FlaskContext::new(buffer_width, buffer_height, fullscreen, palette)?;
+        let flask_context = FlaskContext::new(buffer_width, buffer_height, fullscreen)?;
 
         let current_scene = starting_scene;
         let last_frame_time = FlaskContext::time_now();
@@ -56,8 +56,8 @@ impl GameContext {
     }
 
     // This func is mutable to ensure that this object is not used more than once when game is running
-    pub fn run(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: Vec<Color>, starting_scene: Box<dyn Scene>) -> Result<(), String> {
-        let mut game_context = GameContext::new(buffer_width, buffer_height, fullscreen, palette, starting_scene)?;
+    pub fn run(buffer_width: u32, buffer_height: u32, fullscreen: bool, starting_scene: Box<dyn Scene>) -> Result<(), String> {
+        let mut game_context = GameContext::new(buffer_width, buffer_height, fullscreen, starting_scene)?;
 
         log("Initialization successful. Running...");
 
@@ -96,7 +96,7 @@ impl GameContext {
             // Reset renderer
             renderer.set_camera_x(0);
             renderer.set_camera_y(0);
-            renderer.set_background_color(1).unwrap();
+            renderer.set_background_color(FlaskColor::Purple);
 
             self.current_scene.on_start(renderer);
         };

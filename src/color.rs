@@ -17,6 +17,7 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
