@@ -20,10 +20,10 @@
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
 pub enum Brightness {
-    Normal  = 0,
-    Dim     = 1,
-    Dark    = 2,
-    Black   = 3,
+    Normal = 0,
+    Dim,
+    Dark,
+    VeryDark,
 }
 
 impl Brightness {

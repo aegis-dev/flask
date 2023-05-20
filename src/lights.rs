@@ -34,7 +34,7 @@ impl PointLight {
         let distance = self.distance(x, y);
         let ratio = distance / self.radius as f64;
         if ratio > 1.0 {
-            return Brightness::Black;
+            return Brightness::VeryDark;
         } else if ratio > 0.8 {
             return Brightness::Dark;
         } else if ratio > 0.6 {
