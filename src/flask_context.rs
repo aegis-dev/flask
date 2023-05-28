@@ -26,6 +26,7 @@ use web_sys::{
 
 use crate::gl_renderer::GlRenderer;
 use crate::input::init_input_handlers;
+use crate::palette::FlaskPalette;
 use crate::shaders::ShaderProgram;
 use crate::renderer::Renderer;
 use crate::frame_buffer::FrameBuffer;
@@ -45,7 +46,7 @@ pub struct FlaskContext {
 }
 
 impl FlaskContext {
-    pub fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool) -> Result<FlaskContext, String> {
+    pub fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: FlaskPalette) -> Result<FlaskContext, String> {
         log("Creating FlaskContext...");
 
         if buffer_width % 4 != 0 {
@@ -111,7 +112,7 @@ impl FlaskContext {
         
         log("Loading palette...");
         
-        let palette = palette::flask_default();
+        let palette = palette::load_palette(palette);
 
         log("Creating Renderer...");
 

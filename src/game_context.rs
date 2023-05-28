@@ -24,7 +24,7 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::Closure;
 
 use crate::input::Input;
-use crate::palette::FlaskColor;
+use crate::palette::{FlaskColor, FlaskPalette};
 use crate::scene::Scene;
 use crate::flask_context::FlaskContext;
 use crate::log;
@@ -38,10 +38,10 @@ pub struct GameContext {
 impl GameContext {
     const TICK_RATE: u128 = (1.0f64 / 60.0f64 * 1000.0f64) as u128;
 
-    fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool, starting_scene: Box<dyn Scene>) -> Result<GameContext, String> {
+    fn new(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: FlaskPalette, starting_scene: Box<dyn Scene>) -> Result<GameContext, String> {
         log("Creating GameContext...");
 
-        let flask_context = FlaskContext::new(buffer_width, buffer_height, fullscreen)?;
+        let flask_context = FlaskContext::new(buffer_width, buffer_height, fullscreen, palette)?;
 
         let current_scene = starting_scene;
         let last_frame_time = FlaskContext::time_now();
@@ -56,8 +56,8 @@ impl GameContext {
     }
 
     // This func is mutable to ensure that this object is not used more than once when game is running
-    pub fn run(buffer_width: u32, buffer_height: u32, fullscreen: bool, starting_scene: Box<dyn Scene>) -> Result<(), String> {
-        let mut game_context = GameContext::new(buffer_width, buffer_height, fullscreen, starting_scene)?;
+    pub fn run(buffer_width: u32, buffer_height: u32, fullscreen: bool, palette: FlaskPalette, starting_scene: Box<dyn Scene>) -> Result<(), String> {
+        let mut game_context = GameContext::new(buffer_width, buffer_height, fullscreen, palette, starting_scene)?;
 
         log("Initialization successful. Running...");
 
