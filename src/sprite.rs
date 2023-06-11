@@ -96,37 +96,6 @@ impl Sprite {
     }
 }
 
-#[derive(Clone, Copy, Eq, Hash)]
-pub struct SpriteID(pub u32);
-
-impl PartialEq for SpriteID {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-pub struct SpriteBank {
-    counter: u32,
-    sprites_map: HashMap<SpriteID, Sprite>,
-}
-
-impl SpriteBank {
-    pub fn new() -> SpriteBank {
-        SpriteBank { counter: 0, sprites_map: HashMap::new() }
-    }
-
-    pub fn add_sprite(&mut self, sprite: Sprite) -> SpriteID {
-        let id = SpriteID(self.counter);
-        self.sprites_map.insert(id, sprite);
-        self.counter += 1;
-        id
-    }
-
-    pub fn get_sprite(&self, sprite_id: &SpriteID) -> Option<&Sprite> {
-        self.sprites_map.get(sprite_id)
-    }
-}
-
 pub struct TileSet {
     tileset: Vec<Sprite>,
 }
