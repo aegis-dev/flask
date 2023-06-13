@@ -102,6 +102,7 @@ impl GameContext {
         };
 
         self.flask_context.render_frame();
+        self.flask_context.update_input();
     }
 
     fn request_animation_frame(f: &Closure<dyn FnMut()>) {

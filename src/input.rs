@@ -38,7 +38,9 @@ lazy_static! {
     static ref CURSOR_Y_SENSITIVITY: Mutex<f32> = Mutex::new(0.0);
     static ref MOUSE_EVENT_LOCK: Mutex<i64> = Mutex::new(0);
     static ref KEY_STATE: Mutex<HashMap<Key, State>> = Mutex::new(HashMap::new());
+    static ref LAST_KEY_STATE: Mutex<HashMap<Key, State>> = Mutex::new(HashMap::new());
     static ref MOUSE_STATE: Mutex<HashMap<Button, State>> = Mutex::new(HashMap::new());
+    static ref LAST_MOUSE_STATE: Mutex<HashMap<Button, State>> = Mutex::new(HashMap::new());
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, FromPrimitive, Hash)]
@@ -170,8 +172,22 @@ fn get_key_state(key: Key) -> State {
     }
 }
 
+fn get_last_key_state(key: Key) -> State {
+    match LAST_KEY_STATE.lock().unwrap().get(&key) {
+        None => State::Up,
+        Some(state) => *state
+    }
+}
+
 fn get_button_state(button: Button) -> State {
     match MOUSE_STATE.lock().unwrap().get(&button) {
+        None => State::Up,
+        Some(state) => *state
+    }
+}
+
+fn get_last_button_state(button: Button) -> State {
+    match LAST_MOUSE_STATE.lock().unwrap().get(&button) {
         None => State::Up,
         Some(state) => *state
     }
@@ -189,7 +205,7 @@ fn get_cursor_position() -> (i64, i64)  {
     (*(CURSOR_X.lock().unwrap()) as i64, *(CURSOR_Y.lock().unwrap()) as i64)
 }
 
-pub fn init_input_handlers(
+pub(crate) fn init_input_handlers(
         window: &Window,
         canvas: &HtmlCanvasElement,
         screen_buffer_width: i32,
@@ -207,7 +223,8 @@ pub fn init_input_handlers(
 
     {
         let callback = Closure::wrap(Box::new(move |event: KeyboardEvent| {
-            KEY_STATE.lock().unwrap().insert(Key::from_u32(event.key_code()).unwrap(), State::Down);
+            let key = Key::from_u32(event.key_code()).unwrap();
+            KEY_STATE.lock().unwrap().insert(key, State::Down);
         }) as Box<dyn FnMut(KeyboardEvent)>);
 
         window.add_event_listener_with_callback("keydown", callback.as_ref().unchecked_ref()).unwrap();
@@ -215,7 +232,8 @@ pub fn init_input_handlers(
     }
     {
         let callback = Closure::wrap(Box::new(move |event: KeyboardEvent| {
-            KEY_STATE.lock().unwrap().insert(Key::from_u32(event.key_code()).unwrap(), State::Up);
+            let key = Key::from_u32(event.key_code()).unwrap();
+            KEY_STATE.lock().unwrap().insert(key, State::Up);
         }) as Box<dyn FnMut(KeyboardEvent)>);
 
         window.add_event_listener_with_callback("keyup", callback.as_ref().unchecked_ref()).unwrap();
@@ -223,7 +241,8 @@ pub fn init_input_handlers(
     }
     {
         let callback = Closure::wrap(Box::new(move |event: MouseEvent| {
-            MOUSE_STATE.lock().unwrap().insert(Button::from_i16(event.button()).unwrap(), State::Down);
+            let button = Button::from_i16(event.button()).unwrap();
+            MOUSE_STATE.lock().unwrap().insert(button, State::Down);
         }) as Box<dyn FnMut(MouseEvent)>);
 
         canvas.add_event_listener_with_callback("mousedown", callback.as_ref().unchecked_ref()).unwrap();
@@ -231,7 +250,8 @@ pub fn init_input_handlers(
     }
     {
         let callback = Closure::wrap(Box::new(move |event: MouseEvent| {
-            MOUSE_STATE.lock().unwrap().insert(Button::from_i16(event.button()).unwrap(), State::Up);
+            let button = Button::from_i16(event.button()).unwrap();
+            MOUSE_STATE.lock().unwrap().insert(button, State::Up);
         }) as Box<dyn FnMut(MouseEvent)>);
 
         canvas.add_event_listener_with_callback("mouseup", callback.as_ref().unchecked_ref()).unwrap();
@@ -292,6 +312,16 @@ pub fn init_input_handlers(
     }
 }
 
+pub(crate) fn update_last_states() {
+    for (key, state) in KEY_STATE.lock().unwrap().iter() {
+        LAST_KEY_STATE.lock().unwrap().insert(key.clone(), state.clone());
+    }
+    
+    for (button, state) in MOUSE_STATE.lock().unwrap().iter() {
+        LAST_MOUSE_STATE.lock().unwrap().insert(button.clone(), state.clone());
+    }
+}
+
 pub struct Input;
 
 impl Input {
@@ -302,9 +332,29 @@ impl Input {
     pub fn get_key_state(&self, key: Key) -> State {
         get_key_state(key)
     }
+    
+    pub fn get_last_key_state(&self, key: Key) -> State {
+        get_last_key_state(key)
+    }
+    
+    pub fn key_pressed(&self, key: Key) -> bool {
+        let last_state = get_last_key_state(key);
+        let state = get_key_state(key);
+        state == State::Down && last_state != state
+    }
 
     pub fn get_button_state(&self, button: Button) -> State {
         get_button_state(button)
+    }
+    
+    pub fn get_last_button_state(&self, button: Button) -> State {
+        get_last_button_state(button)
+    }
+    
+    pub fn button_pressed(&self, button: Button) -> bool {
+        let last_state = get_last_button_state(button);
+        let state = get_button_state(button);
+        state == State::Down && last_state != state
     }
 
     pub fn get_cursor_position_x(&self) -> i64  {

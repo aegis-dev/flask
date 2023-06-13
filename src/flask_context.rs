@@ -25,7 +25,7 @@ use web_sys::{
 };
 
 use crate::gl_renderer::GlRenderer;
-use crate::input::init_input_handlers;
+use crate::input;
 use crate::palette::FlaskPalette;
 use crate::shaders::ShaderProgram;
 use crate::renderer::Renderer;
@@ -118,7 +118,7 @@ impl FlaskContext {
 
         let renderer = Renderer::new(gl_context.clone(), FrameBuffer::new(gl_context.clone(), buffer_width, buffer_height), palette)?;
 
-        init_input_handlers(
+        input::init_input_handlers(
                 &window,
                 &canvas,
                 buffer_width as i32,
@@ -182,6 +182,10 @@ impl FlaskContext {
 
     pub fn time_now() -> i128 {
         Date::new_0().get_milliseconds() as i128
+    }
+        
+    pub fn update_input(&self) {
+        input::update_last_states();
     }
 }
 
