@@ -17,7 +17,6 @@
 // along with Flask. If not, see <https://www.gnu.org/licenses/>.
 //
 
-use std::collections::HashMap;
 use png::{ColorType, Transformations};
 
 use crate::{byte_buffer_reader::ByteBufferReader, palette::FlaskColor};
